@@ -759,6 +759,254 @@ def action_cron_list(request: Request):
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
 
+@app.get("/api/actions/cron-jobs")
+def action_cron_jobs(request: Request):
+    """List cron jobs from Hermes jobs.json (read-only)."""
+    verify_token(request)
+    jobs_path = os.path.expanduser("~/.hermes/cron/jobs.json")
+    if not os.path.exists(jobs_path):
+        return []
+    try:
+        import json
+        with open(jobs_path) as f:
+            data = json.load(f)
+        jobs = data.get("jobs", [])
+        return [{
+            "id": j.get("id"),
+            "name": j.get("name"),
+            "schedule": j.get("schedule_display", ""),
+            "enabled": j.get("enabled", False),
+            "last_status": j.get("last_status"),
+            "last_run": j.get("last_run_at"),
+            "next_run": j.get("next_run_at"),
+        } for j in jobs if j.get("enabled")]
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+@app.post("/api/actions/trigger-cron")
+def action_trigger_cron(request: Request, body: dict = None):
+    """Trigger a cron job by ID."""
+    verify_token(request)
+    body = body or {}
+    job_id = body.get("job_id", "")
+    if not job_id:
+        return JSONResponse({"error": "job_id required"}, status_code=400)
+    try:
+        result = subprocess.run(
+            ["hermes", "cron", "run", job_id],
+            capture_output=True, text=True, timeout=30
+        )
+        if result.returncode == 0:
+            return {"ok": True, "message": f"Job {job_id} triggered"}
+        return JSONResponse({"error": result.stderr.strip() or "trigger failed"}, status_code=500)
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+@app.get("/api/usage")
+def api_usage():
+    """Return AI usage data from calibration files."""
+    import json, glob
+    usage_dir = os.path.expanduser("~/.hermes/usage")
+    result = {}
+    for f in glob.glob(os.path.join(usage_dir, "*calibration*.json")):
+        name = os.path.basename(f).replace(".json", "")
+        try:
+            with open(f) as fp:
+                result[name] = json.load(fp)
+        except:
+            pass
+    return result
+
+# ─── Knowledge Hub API ───────────────────────────────────────────────
+import sys as _sys
+_sys.path.insert(0, str(Path("~/.hermes/hermes-agent").expanduser()))
+from fastapi import APIRouter as _APIRouter
+from hermes_cli import knowledge as _knowledge
+
+_knowledge_router = _APIRouter(prefix="/api/knowledge", tags=["knowledge"])
+
+@_knowledge_router.get("/search")
+def knowledge_search(q: str = ""):
+    """Search knowledge items."""
+    try:
+        repo_root = Path.cwd()
+        hermes_home = Path("~/.hermes").expanduser()
+        items = _knowledge._load_or_build(
+            _knowledge._shared_dir(hermes_home) / "knowledge_index.json",
+            repo_root, hermes_home,
+        )
+        results = _knowledge.search_items(items, q) if q else items
+        out = []
+        for it in results:
+            out.append({
+                "id": it.id,
+                "title": _knowledge.redact_secrets(it.title),
+                "summary": _knowledge.redact_secrets(it.summary),
+                "source_type": it.source_type,
+                "tags": it.tags,
+                "project": it.project,
+                "visibility": it.visibility,
+                "mtime": it.mtime,
+            })
+        return out
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+@_knowledge_router.get("/items/{item_id}")
+def knowledge_item(item_id: str):
+    """Get a single knowledge item with its content."""
+    try:
+        repo_root = Path.cwd()
+        hermes_home = Path("~/.hermes").expanduser()
+        items = _knowledge._load_or_build(
+            _knowledge._shared_dir(hermes_home) / "knowledge_index.json",
+            repo_root, hermes_home,
+        )
+        item = _knowledge.get_item(items, item_id)
+        if item is None:
+            return JSONResponse({"error": "item not found"}, status_code=404)
+        content = _knowledge.read_item_content(item)
+        return {
+            "id": item.id,
+            "title": _knowledge.redact_secrets(item.title),
+            "summary": _knowledge.redact_secrets(item.summary),
+            "source_type": item.source_type,
+            "tags": item.tags,
+            "project": item.project,
+            "visibility": item.visibility,
+            "mtime": item.mtime,
+            "content": _knowledge.redact_secrets(content),
+        }
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+@_knowledge_router.get("/decisions")
+def knowledge_decisions():
+    """List published decisions."""
+    try:
+        decisions = _knowledge.load_decisions()
+        out = []
+        for d in decisions:
+            out.append({
+                "id": d.id,
+                "title": _knowledge.redact_secrets(d.title),
+                "context": _knowledge.redact_secrets(d.context),
+                "decision": _knowledge.redact_secrets(d.decision),
+                "rationale": _knowledge.redact_secrets(d.rationale),
+                "created_at": d.created_at,
+            })
+        return out
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+@_knowledge_router.post("/publish")
+def knowledge_publish(body: dict = None):
+    """Publish a new decision."""
+    body = body or {}
+    try:
+        d = _knowledge.publish_decision(
+            title=body.get("title", ""),
+            context=body.get("context", ""),
+            decision=body.get("decision", ""),
+            rationale=body.get("rationale", ""),
+        )
+        return {
+            "id": d.id,
+            "title": _knowledge.redact_secrets(d.title),
+            "context": _knowledge.redact_secrets(d.context),
+            "decision": _knowledge.redact_secrets(d.decision),
+            "rationale": _knowledge.redact_secrets(d.rationale),
+            "created_at": d.created_at,
+        }
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+@_knowledge_router.get("/experts")
+def knowledge_experts():
+    """List registered experts."""
+    try:
+        experts = _knowledge.load_experts()
+        out = []
+        for ex in experts:
+            out.append({
+                "expert_id": ex.expert_id,
+                "name": _knowledge.redact_secrets(ex.name),
+                "specialty": _knowledge.redact_secrets(ex.specialty),
+                "status": ex.status,
+                "registered_at": ex.registered_at,
+                "last_heartbeat": ex.last_heartbeat,
+            })
+        return out
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+@_knowledge_router.post("/register")
+def knowledge_register(body: dict = None):
+    """Register a new expert."""
+    body = body or {}
+    try:
+        ex = _knowledge.register_expert(
+            expert_id=body.get("expert_id", ""),
+            name=body.get("name", ""),
+            specialty=body.get("specialty", ""),
+        )
+        return {
+            "expert_id": ex.expert_id,
+            "name": _knowledge.redact_secrets(ex.name),
+            "specialty": _knowledge.redact_secrets(ex.specialty),
+            "status": ex.status,
+            "registered_at": ex.registered_at,
+            "last_heartbeat": ex.last_heartbeat,
+        }
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+@_knowledge_router.post("/heartbeat")
+def knowledge_heartbeat(body: dict = None):
+    """Send expert heartbeat."""
+    body = body or {}
+    try:
+        ok = _knowledge.heartbeat_expert(body.get("expert_id", ""))
+        return {"ok": ok}
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+@_knowledge_router.get("/blackboard")
+def knowledge_blackboard_get():
+    """Load blackboard messages."""
+    try:
+        msgs = _knowledge.load_blackboard()
+        return [_knowledge.redact_secrets(str(m)) if isinstance(m, str)
+                else {k: _knowledge.redact_secrets(str(v)) for k, v in m.items()}
+                for m in msgs]
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+@_knowledge_router.post("/blackboard")
+def knowledge_blackboard_post(body: dict = None):
+    """Post a message to the blackboard."""
+    body = body or {}
+    try:
+        p = _knowledge.post_to_blackboard(
+            expert_id=body.get("expert_id", ""),
+            content=body.get("content", ""),
+            category=body.get("category", "general"),
+        )
+        return {"ok": True, "path": str(p)}
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+@_knowledge_router.get("/report")
+def knowledge_report():
+    """Generate a context report."""
+    try:
+        report = _knowledge.generate_context_report()
+        return {"report": _knowledge.redact_secrets(report)}
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+app.include_router(_knowledge_router)
+# ─── End Knowledge Hub API ───────────────────────────────────────────
 
 if __name__ == "__main__":
     import uvicorn

@@ -272,7 +272,7 @@
     <a class="quick-pill" href="http://localhost:27124"><span class="qp-icon">📋</span>Kanban</a>
     <a class="quick-pill" href="/docs"><span class="qp-icon">📚</span>文档中心</a>
     <a class="quick-pill" href="https://github.com/NewDynasty"><span class="qp-icon">🐙</span>GitHub</a>
-    <a class="quick-pill" href="#"><span class="qp-icon">📊</span>用量</a>
+    <a class="quick-pill" href="/api/usage"><span class="qp-icon">📊</span>用量</a>
   </div>
 </div>
 
@@ -314,21 +314,9 @@
     <div class="sec-eyebrow">定时任务</div>
     <div class="sec-title">自动化在跑什么。</div>
   </div>
-  <div class="row-list">
-    <div class="row" style="cursor:default">
-      <div class="row-icon" style="background:#e8f8ed;font-size:14px">⏰</div>
-      <div class="row-body"><div class="row-title">AI Digest</div><div class="row-desc">AI 新闻摘要 → Discord</div></div>
-      <div class="row-meta"><span class="row-badge on">运行中</span><div class="row-port">09:00/天</div></div>
-    </div>
-    <div class="row" style="cursor:default">
-      <div class="row-icon" style="font-size:14px">⏸️</div>
-      <div class="row-body"><div class="row-title">TrendRadar</div><div class="row-desc">AI 舆情监控 → 飞书</div></div>
-      <div class="row-meta"><span class="row-badge off">暂停</span><div class="row-port">4h</div></div>
-    </div>
-    <div class="row" style="cursor:default">
-      <div class="row-icon" style="background:#e8f8ed;font-size:14px">⏰</div>
-      <div class="row-body"><div class="row-title">AI 用量</div><div class="row-desc">z.ai + Kimi 配额追踪</div></div>
-      <div class="row-meta"><span class="row-badge on">运行中</span><div class="row-port">30m</div></div>
+  <div class="row-list" id="cron-list">
+    <div class="row" style="cursor:default;opacity:.4">
+      <div class="row-body"><div class="row-title">加载中...</div></div>
     </div>
   </div>
 </div>
@@ -568,6 +556,9 @@ async function load(){
   // Projects (API-driven)
   renderProjects(projects);
 
+  // Cron jobs (API-driven)
+  renderCron();
+
   // Research list
   if(research&&research.length>0){
     const list=document.getElementById('research-list');
@@ -603,8 +594,41 @@ document.getElementById('theme-toggle').onclick=toggleTheme;
 document.addEventListener('DOMContentLoaded',load);
 
 // --- Command Actions ---
+async function renderCron(){
+  const token=localStorage.getItem('cc_token');
+  const list=document.getElementById('cron-list');
+  if(!list)return;
+  if(!token){list.innerHTML='<div class="row" style="cursor:default;opacity:.5"><div class="row-body"><div class="row-title">登录后查看</div></div></div>';return;}
+  try{
+    const r=await fetch('/api/actions/cron-jobs',{headers:{'Authorization':'Bearer '+token}});
+    const jobs=await r.json();
+    if(!jobs.length){list.innerHTML='<div class="row" style="cursor:default;opacity:.5"><div class="row-body"><div class="row-title">无活跃任务</div></div></div>';return;}
+    list.innerHTML=jobs.map(j=>{
+      const icon=j.last_status==='ok'?'⏰':j.last_status==='error'?'⚠️':'⏰';
+      const badge=j.last_status==='ok'?'<span class="row-badge on">运行中</span>':'<span class="row-badge off">'+(j.last_status||'未知')+'</span>';
+      return '<div class="row" style="cursor:default">'+
+        '<div class="row-icon" style="font-size:14px">'+icon+'</div>'+
+        '<div class="row-body"><div class="row-title">'+j.name+'</div></div>'+
+        '<div class="row-meta">'+badge+'<button class="restart-btn" onclick="triggerCron(\''+j.id+'\',\''+j.name.replace(/'/g,"\\'")+'\')" title="手动触发">▶</button><div class="row-port">'+j.schedule+'</div></div>'+
+        '</div>';
+    }).join('');
+  }catch(e){console.error(e);}
+}
+
+async function triggerCron(id,name){
+  const token=localStorage.getItem('cc_token');
+  if(!token){showToast('请先登录','error');return;}
+  if(!confirm('手动触发: '+name+'？'))return;
+  try{
+    const r=await fetch('/api/actions/trigger-cron',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({job_id:id})});
+    const d=await r.json();
+    if(r.ok)showToast(d.message||'已触发','ok');
+    else showToast(d.detail||d.error||'触发失败','error');
+  }catch(e){showToast('网络错误','error');}
+}
+
 async function restartService(name){
-  const token=localStorage.getItem('token');
+  const token=localStorage.getItem('cc_token');
   if(!token){showToast('请先登录','error');return;}
   if(!confirm('确定重启 '+name+'？'))return;
   try{
