@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Command Center · Style A</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Inter',-apple-system,sans-serif; background:#f8f9fa; color:#1d1d1f; line-height:1.5; }
+
+  .wrap { max-width:1080px; margin:0 auto; padding:0 24px; }
+
+  /* Nav */
+  nav { padding:20px 0; display:flex; justify-content:space-between; align-items:center; }
+  nav .logo { font-size:15px; font-weight:600; letter-spacing:-0.5px; }
+  nav .nav-right { display:flex; gap:16px; align-items:center; font-size:13px; color:#86868b; }
+  nav .nav-right a { color:#86868b; text-decoration:none; }
+  nav .clock { font-variant-numeric:tabular-nums; }
+  nav .avatar { width:28px; height:28px; border-radius:50%; background:#e0e0e0; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; color:#666; }
+
+  /* Hero */
+  .hero { text-align:center; padding:48px 0 32px; }
+  .hero h1 { font-size:36px; font-weight:700; letter-spacing:-1.5px; margin-bottom:4px; }
+  .hero p { font-size:14px; color:#86868b; }
+
+  /* Status pills */
+  .status-pills { display:flex; justify-content:center; gap:8px; margin:24px 0 40px; flex-wrap:wrap; }
+  .pill { display:flex; align-items:center; gap:5px; background:#fff; border:1px solid #e5e5e5; padding:5px 12px; border-radius:20px; font-size:12px; color:#555; }
+  .pill .dot { width:6px; height:6px; border-radius:50%; }
+  .pill .dot.on { background:#34c759; }
+  .pill .dot.off { background:#d1d1d6; }
+
+  /* Section */
+  .sec { margin-bottom:40px; }
+  .sec-title { font-size:12px; font-weight:600; color:#86868b; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:12px; }
+
+  /* Quick links - rounded cards */
+  .quick-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:10px; }
+  .q-card { background:#fff; border:1px solid #e8e8e8; border-radius:12px; padding:16px; text-decoration:none; color:#1d1d1f; transition:all .15s; display:flex; flex-direction:column; gap:8px; }
+  .q-card:hover { border-color:#c8c8c8; transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,.06); }
+  .q-card .icon { font-size:20px; }
+  .q-card .label { font-size:13px; font-weight:500; }
+  .q-card .sub { font-size:11px; color:#86868b; }
+
+  /* Project cards */
+  .proj-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:12px; }
+  .proj-card { background:#fff; border:1px solid #e8e8e8; border-radius:14px; padding:20px; text-decoration:none; color:#1d1d1f; transition:all .15s; }
+  .proj-card:hover { border-color:#c8c8c8; transform:translateY(-2px); box-shadow:0 4px 16px rgba(0,0,0,.06); }
+  .proj-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .proj-name { font-size:15px; font-weight:600; }
+  .badge { font-size:10px; padding:2px 8px; border-radius:10px; font-weight:500; }
+  .badge.green { background:#e8f9ed; color:#34c759; }
+  .badge.yellow { background:#fef6e0; color:#f5a623; }
+  .badge.gray { background:#f0f0f0; color:#999; }
+  .proj-desc { font-size:12px; color:#86868b; margin-bottom:10px; }
+  .proj-tags { display:flex; gap:4px; }
+  .tag { background:#f5f5f7; padding:2px 7px; border-radius:6px; font-size:10px; color:#86868b; }
+
+  /* Infra */
+  .infra-card { background:#fff; border:1px solid #e8e8e8; border-radius:14px; overflow:hidden; }
+  .infra-row { display:flex; align-items:center; padding:12px 20px; border-bottom:1px solid #f5f5f7; font-size:13px; }
+  .infra-row:last-child { border-bottom:none; }
+  .infra-name { flex:1; font-weight:500; }
+  .infra-port { width:60px; color:#86868b; font-variant-numeric:tabular-nums; }
+  .infra-status { width:80px; }
+  .infra-note { width:200px; font-size:12px; color:#86868b; }
+
+  /* Cron */
+  .cron-card { background:#fff; border:1px solid #e8e8e8; border-radius:14px; overflow:hidden; }
+  .cron-row { display:flex; align-items:center; padding:12px 20px; border-bottom:1px solid #f5f5f7; }
+  .cron-row:last-child { border-bottom:none; }
+  .cron-name { flex:1; font-size:13px; font-weight:500; }
+  .cron-sched { font-size:11px; color:#86868b; font-variant-numeric:tabular-nums; }
+  .cron-status { margin-left:12px; }
+
+  footer { text-align:center; padding:40px 0; font-size:11px; color:#c8c8c8; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <nav>
+    <div class="logo">⚡ Command Center</div>
+    <div class="nav-right">
+      <span class="clock" id="clock"></span>
+      <div class="avatar">D</div>
+    </div>
+  </nav>
+
+  <div class="hero">
+    <h1>Good afternoon, Dynasty</h1>
+    <p>你的工作区，一切尽在掌握</p>
+  </div>
+
+  <div class="status-pills">
+    <div class="pill"><span class="dot on"></span>Hermes Gateway</div>
+    <div class="pill"><span class="dot on"></span>Early Rise</div>
+    <div class="pill"><span class="dot on"></span>Obsidian</div>
+    <div class="pill"><span class="dot on"></span>Codex</div>
+    <div class="pill"><span class="dot off"></span>Sync-Hub</div>
+    <div class="pill"><span class="dot off"></span>RSSHub</div>
+  </div>
+
+  <!-- Quick Access -->
+  <div class="sec">
+    <div class="sec-title">快速访问</div>
+    <div class="quick-grid">
+      <a class="q-card" href="#"><span class="icon">☀️</span><span class="label">Early Rise</span><span class="sub">早起打卡</span></a>
+      <a class="q-card" href="#"><span class="icon">🤖</span><span class="label">Hermes</span><span class="sub">AI 助手</span></a>
+      <a class="q-card" href="#"><span class="icon">⚡</span><span class="label">Codex</span><span class="sub">智能体</span></a>
+      <a class="q-card" href="#"><span class="icon">📋</span><span class="label">Kanban</span><span class="sub">项目看板</span></a>
+      <a class="q-card" href="#"><span class="icon">🐙</span><span class="label">GitHub</span><span class="sub">代码仓库</span></a>
+      <a class="q-card" href="#"><span class="icon">📊</span><span class="label">用量</span><span class="sub">API 配额</span></a>
+    </div>
+  </div>
+
+  <!-- Active Projects -->
+  <div class="sec">
+    <div class="sec-title">活跃项目</div>
+    <div class="proj-grid">
+      <a class="proj-card" href="#">
+        <div class="proj-top"><span class="proj-name">Early Rise</span><span class="badge green">在线</span></div>
+        <div class="proj-desc">早起打卡追踪。热力图可视化，里程碑系统，连续打卡 1 天。</div>
+        <div class="proj-tags"><span class="tag">@discipline</span><span class="tag">FastAPI</span><span class="tag">:8899</span></div>
+      </a>
+      <a class="proj-card" href="#">
+        <div class="proj-top"><span class="proj-name">Wasteland 3D</span><span class="badge yellow">开发中</span></div>
+        <div class="proj-desc">废土生存 3D。Godot 4.3，CSG 零资源开发，从 H5 迁移。</div>
+        <div class="proj-tags"><span class="tag">@game</span><span class="tag">@godot</span><span class="tag">#high</span></div>
+      </a>
+      <a class="proj-card" href="#">
+        <div class="proj-top"><span class="proj-name">Article Worker</span><span class="badge yellow">开发中</span></div>
+        <div class="proj-desc">文章处理。SPA/SSR 抓取、HTML 清洗、图片下载、规则引擎。</div>
+        <div class="proj-tags"><span class="tag">@web</span><span class="tag">FastAPI</span><span class="tag">#high</span></div>
+      </a>
+      <a class="proj-card" href="#">
+        <div class="proj-top"><span class="proj-name">Last Shelter</span><span class="badge yellow">开发中</span></div>
+        <div class="proj-desc">末世避难所。Unity 6000.4，横截面侧视图，2D 废土生存模拟。</div>
+        <div class="proj-tags"><span class="tag">@game</span><span class="tag">@unity</span><span class="tag">#high</span></div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Infrastructure -->
+  <div class="sec">
+    <div class="sec-title">基础设施</div>
+    <div class="infra-card">
+      <div class="infra-row">
+        <div class="infra-name">Hermes Gateway</div>
+        <div class="infra-port">:8000</div>
+        <div class="infra-status"><span class="dot on" style="width:6px;height:6px;border-radius:50%;background:#34c759;display:inline-block"></span></div>
+        <div class="infra-note">Discord / 飞书 / WebUI</div>
+      </div>
+      <div class="infra-row">
+        <div class="infra-name">Early Rise</div>
+        <div class="infra-port">:8899</div>
+        <div class="infra-status"><span class="dot on" style="width:6px;height:6px;border-radius:50%;background:#34c759;display:inline-block"></span></div>
+        <div class="infra-note">早起打卡</div>
+      </div>
+      <div class="infra-row">
+        <div class="infra-name">Codex Server</div>
+        <div class="infra-port">:8090</div>
+        <div class="infra-status"><span class="dot on" style="width:6px;height:6px;border-radius:50%;background:#34c759;display:inline-block"></span></div>
+        <div class="infra-note">CLI 智能体</div>
+      </div>
+      <div class="infra-row">
+        <div class="infra-name">Obsidian Kanban</div>
+        <div class="infra-port">:27124</div>
+        <div class="infra-status"><span class="dot on" style="width:6px;height:6px;border-radius:50%;background:#34c759;display:inline-block"></span></div>
+        <div class="infra-note">看板桥接</div>
+      </div>
+      <div class="infra-row">
+        <div class="infra-name">Sync-Hub v2</div>
+        <div class="infra-port">:8081</div>
+        <div class="infra-status"><span class="dot off" style="width:6px;height:6px;border-radius:50%;background:#d1d1d6;display:inline-block"></span></div>
+        <div class="infra-note">离线</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cron Jobs -->
+  <div class="sec">
+    <div class="sec-title">定时任务</div>
+    <div class="cron-card">
+      <div class="cron-row">
+        <div class="cron-name">AI Digest</div>
+        <div class="cron-sched">09:00 / 每天</div>
+        <div class="cron-status"><span class="badge green">运行中</span></div>
+      </div>
+      <div class="cron-row">
+        <div class="cron-name">TrendRadar</div>
+        <div class="cron-sched">every 4h</div>
+        <div class="cron-status"><span class="badge yellow">暂停</span></div>
+      </div>
+      <div class="cron-row">
+        <div class="cron-name">z.ai 用量</div>
+        <div class="cron-sched">every 30m</div>
+        <div class="cron-status"><span class="badge green">运行中</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Research -->
+  <div class="sec">
+    <div class="sec-title">最近研究</div>
+    <div class="proj-grid">
+      <a class="proj-card" href="#" style="padding:14px 16px">
+        <div class="proj-desc" style="margin:0;color:#555">compare-2026-money-making-strategies</div>
+      </a>
+      <a class="proj-card" href="#" style="padding:14px 16px">
+        <div class="proj-desc" style="margin:0;color:#555">debug-kimi-vision-and-fallback</div>
+      </a>
+      <a class="proj-card" href="#" style="padding:14px 16px">
+        <div class="proj-desc" style="margin:0;color:#555">pitfall-zai-glm-api</div>
+      </a>
+    </div>
+  </div>
+
+  <footer>Command Center · Style A — Apple Clean</footer>
+</div>
+<script>
+function tick(){const d=new Date();document.getElementById('clock').textContent=d.toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false})}
+tick();setInterval(tick,1000);
+</script>
+</body>
+</html>

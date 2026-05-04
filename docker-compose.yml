@@ -1,0 +1,15 @@
+version: "3.8"
+
+services:
+  earlyrise:
+    build: .
+    container_name: early-rise
+    restart: unless-stopped
+    ports:
+      - "8899:8899"
+    environment:
+      - EARLY_RISE_TOKEN=earlyrise2026    # 改成你的密码
+      - EARLY_RISE_DB=/app/data/earlyrise.db
+      - EARLY_RISE_STATIC=./frontend
+    volumes:
+      - ./data:/app/data                  # SQLite 持久化

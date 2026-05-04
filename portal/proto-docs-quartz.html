@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Knowledge Base — Quartz Style</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{font-family:'Inter',-apple-system,sans-serif;background:#fafafa;color:#1a1a2e;-webkit-font-smoothing:antialiased}
+
+  /* TOP NAV */
+  .topbar{position:sticky;top:0;z-index:100;background:#1a1a2e;color:#e0e0e0;height:56px;display:flex;align-items:center;padding:0 24px;border-bottom:1px solid rgba(255,255,255,.08)}
+  .topbar-brand{font-size:15px;font-weight:700;color:#fff;text-decoration:none;display:flex;align-items:center;gap:8px}
+  .topbar-brand .icon{font-size:20px}
+  .topbar-search{margin-left:auto;position:relative}
+  .topbar-search input{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px 12px 8px 34px;color:#fff;font-size:13px;width:260px;outline:none;transition:border-color .2s}
+  .topbar-search input::placeholder{color:#666}
+  .topbar-search input:focus{border-color:#7c3aed}
+  .topbar-search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#666}
+  .topbar-nav{display:flex;gap:20px;margin-left:32px}
+  .topbar-nav a{font-size:13px;color:#888;text-decoration:none;transition:color .15s}
+  .topbar-nav a:hover{color:#fff}
+  .topbar-nav a.active{color:#a78bfa}
+
+  /* LAYOUT */
+  .layout{display:flex}
+
+  /* LEFT SIDEBAR - Explorer */
+  .explorer{width:260px;background:#16162a;color:#c0c0d0;height:calc(100vh - 56px);overflow-y:auto;position:sticky;top:56px;flex-shrink:0;border-right:1px solid rgba(255,255,255,.05)}
+  .explorer::-webkit-scrollbar{width:4px}
+  .explorer::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
+  .exp-header{padding:16px 16px 8px;font-size:11px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:1px}
+  .exp-folder{padding:8px 16px 4px}
+  .exp-folder-name{font-size:13px;font-weight:600;color:#a78bfa;display:flex;align-items:center;gap:6px;cursor:pointer}
+  .exp-folder-name .arrow{font-size:10px;transition:transform .15s}
+  .exp-folder.open .arrow{transform:rotate(90deg)}
+  .exp-files{padding-left:16px}
+  .exp-file{display:block;padding:5px 12px;font-size:13px;color:#888;text-decoration:none;border-radius:6px;transition:all .12s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .exp-file:hover{background:rgba(255,255,255,.05);color:#c0c0d0}
+  .exp-file.active{background:rgba(124,58,237,.2);color:#a78bfa}
+
+  /* GRAPH button */
+  .graph-btn{margin:16px;padding:10px;background:rgba(124,58,237,.15);border-radius:10px;text-align:center;cursor:pointer;transition:background .15s}
+  .graph-btn:hover{background:rgba(124,58,237,.25)}
+  .graph-btn span{font-size:13px;color:#a78bfa;font-weight:500}
+
+  /* MAIN CONTENT */
+  .main{flex:1;min-width:0;max-width:800px;margin:0 auto;padding:40px 48px 80px}
+
+  /* Page header */
+  .page-header{margin-bottom:32px}
+  .page-title{font-size:32px;font-weight:700;letter-spacing:-.5px;color:#1a1a2e;margin-bottom:8px}
+  .page-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+  .tag{padding:3px 10px;border-radius:980px;font-size:11px;font-weight:600}
+  .tag-purple{background:#ede9fe;color:#7c3aed}
+  .tag-red{background:#fee2e2;color:#dc2626}
+  .tag-yellow{background:#fef3c7;color:#d97706}
+  .tag-green{background:#d1fae5;color:#059669}
+  .tag-blue{background:#dbeafe;color:#2563eb}
+  .page-meta{font-size:12px;color:#888;margin-top:8px}
+  .page-meta a{color:#a78bfa;text-decoration:none}
+
+  /* Markdown */
+  .md h2{font-size:22px;font-weight:600;margin:36px 0 12px;color:#1a1a2e;letter-spacing:-.3px;display:flex;align-items:center;gap:8px}
+  .md h2 .anchor{color:#a78bfa;font-size:14px;opacity:0;transition:opacity .15s}
+  .md h2:hover .anchor{opacity:1}
+  .md h3{font-size:17px;font-weight:600;margin:24px 0 8px;color:#333}
+  .md p{font-size:15px;line-height:1.75;color:#444;margin-bottom:14px}
+  .md ul,.md ol{margin:0 0 14px 24px;font-size:15px;line-height:1.75;color:#444}
+  .md li{margin-bottom:4px}
+  .md code{background:#f0f0f5;padding:2px 6px;border-radius:4px;font-size:13px;font-family:'JetBrains Mono',monospace;color:#7c3aed}
+  .md pre{background:#1e1e2e;color:#cdd6f4;padding:20px;border-radius:10px;overflow-x:auto;margin:0 0 18px;font-size:13px;line-height:1.6;font-family:'JetBrains Mono',monospace}
+  .md pre code{background:none;padding:0;color:inherit;font-size:inherit}
+  .md blockquote{border-left:3px solid #a78bfa;padding:8px 0 8px 16px;margin:0 0 14px;color:#666;background:#f8f7ff;border-radius:0 8px 8px 0}
+  .md a{color:#7c3aed;text-decoration:none}
+  .md a:hover{text-decoration:underline}
+  .md strong{font-weight:600;color:#1a1a2e}
+  .md table{width:100%;border-collapse:collapse;margin:0 0 16px;font-size:14px}
+  .md th{background:#f0f0f5;padding:10px 14px;text-align:left;font-weight:600;border-bottom:2px solid #e0e0e5}
+  .md td{padding:10px 14px;border-bottom:1px solid #f0f0f5}
+
+  /* Callout */
+  .callout{padding:16px 20px;border-radius:10px;margin:0 0 16px;display:flex;gap:12px;font-size:14px;line-height:1.6}
+  .callout-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+  .callout-warning{background:#fef3c7;border:1px solid #fde68a}
+  .callout-info{background:#dbeafe;border:1px solid #bfdbfe}
+  .callout-tip{background:#d1fae5;border:1px solid #a7f3d0}
+
+  /* Links section */
+  .links-section{margin-top:48px;padding:24px;background:#fff;border-radius:12px;border:1px solid #e5e5ea}
+  .links-title{font-size:14px;font-weight:600;color:#1a1a2e;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+  .links-title .icon{color:#a78bfa}
+  .link-item{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f5f5f7;text-decoration:none;color:#444;font-size:14px;transition:color .12s}
+  .link-item:last-child{border-bottom:none}
+  .link-item:hover{color:#7c3aed}
+  .link-arrow{color:#a78bfa;font-size:14px}
+
+  /* Graph preview */
+  .graph-preview{margin-top:32px;padding:24px;background:#fff;border-radius:12px;border:1px solid #e5e5ea;text-align:center}
+  .graph-canvas{width:100%;height:200px;background:#fafafa;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#888;font-size:13px}
+  .graph-nodes{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:16px}
+  .graph-node{padding:6px 14px;background:#ede9fe;border-radius:980px;font-size:12px;color:#7c3aed;font-weight:500}
+  .graph-node.current{background:#7c3aed;color:#fff}
+  .graph-node:hover{cursor:pointer;opacity:.8}
+
+  /* RIGHT SIDEBAR - Outline */
+  .outline{width:200px;position:fixed;top:72px;right:24px}
+  .outline-title{font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+  .outline a{display:block;padding:3px 0;font-size:12.5px;color:#888;text-decoration:none;line-height:1.5}
+  .outline a:hover{color:#7c3aed}
+  .outline a.active{color:#7c3aed;font-weight:500}
+
+  @media(max-width:768px){
+    .explorer{display:none}
+    .outline{display:none}
+    .main{padding:24px 20px 60px}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="topbar-brand" href="#"><span class="icon">✦</span> Dynasty Wiki</a>
+  <div class="topbar-search">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" placeholder="搜索所有笔记... (⌘K)" id="search">
+  </div>
+  <div class="topbar-nav">
+    <a href="#">首页</a>
+    <a href="#" class="active">笔记</a>
+    <a href="#">图谱</a>
+    <a href="#">最近</a>
+    <a href="#">标签</a>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- Explorer -->
+  <div class="explorer">
+    <div class="graph-btn"><span>🕸️ 查看知识图谱</span></div>
+
+    <div class="exp-header">文件浏览器</div>
+
+    <div class="exp-folder open">
+      <div class="exp-folder-name"><span class="arrow">▶</span>📁 Research</div>
+      <div class="exp-files">
+        <a class="exp-file active" href="#">pitfall-zai-glm-api.md</a>
+        <a class="exp-file" href="#">debug-kimi-vision.md</a>
+        <a class="exp-file" href="#">compare-money-strategies.md</a>
+        <a class="exp-file" href="#">debug-context-budget.md</a>
+        <a class="exp-file" href="#">debug-memos-embedding.md</a>
+        <a class="exp-file" href="#">pitfall-claude-code.md</a>
+      </div>
+    </div>
+
+    <div class="exp-folder">
+      <div class="exp-folder-name"><span class="arrow">▶</span>📁 Notes</div>
+      <div class="exp-files">
+        <a class="exp-file" href="#">模型能力手册.md</a>
+        <a class="exp-file" href="#">feishu-group-mapping.md</a>
+        <a class="exp-file" href="#">user-profile-dynasty.md</a>
+      </div>
+    </div>
+
+    <div class="exp-folder">
+      <div class="exp-folder-name"><span class="arrow">▶</span>📁 Kanban</div>
+      <div class="exp-files">
+        <a class="exp-file" href="#">部署状态看板.md</a>
+        <a class="exp-file" href="#">定时任务看板.md</a>
+      </div>
+    </div>
+
+    <div class="exp-folder">
+      <div class="exp-folder-name"><span class="arrow">▶</span>📁 PlanPipeline</div>
+      <div class="exp-files">
+        <a class="exp-file" href="#">早起习惯养成.md</a>
+        <a class="exp-file" href="#">Command-Center-v2.md</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div class="main">
+    <div class="page-header">
+      <div class="page-title">z.ai GLM API 踩坑记录</div>
+      <div class="page-tags">
+        <span class="tag tag-purple">pitfall</span>
+        <span class="tag tag-blue">z.ai</span>
+        <span class="tag tag-green">glm</span>
+        <span class="tag tag-red">api</span>
+      </div>
+      <div class="page-meta">
+        创建于 2026-05-02 · 最后修改 2 小时前 ·
+        <a href="#">编辑此页</a>
+      </div>
+    </div>
+
+    <div class="md">
+      <h2>问题背景 <a class="anchor" href="#">#</a></h2>
+      <p>使用 z.ai GLM 系列模型 API 时，遇到了一系列非预期行为。记录于此，避免重复踩坑。</p>
+
+      <div class="callout callout-warning">
+        <span class="callout-icon">⚠️</span>
+        <div><strong>本文档基于 2026 年 5 月的实际测试。</strong> z.ai 可能已修复部分问题，请以最新 API 文档为准。</div>
+      </div>
+
+      <h2>坑 1：Smart Routing 静默降级 <a class="anchor" href="#">#</a></h2>
+      <p>当启用 <code>smart_routing</code> 参数时，API 会<strong>静默</strong>将复杂请求降级到 GLM-4.5-Air 而不通知调用方。</p>
+
+      <div class="callout callout-info">
+        <span class="callout-icon">💡</span>
+        <div>关键教训：永远不要信任 API 会按请求的模型返回结果，务必检查 <code>x-model-used</code> 响应头。</div>
+      </div>
+
+      <h2>坑 2：Token 计数不一致 <a class="anchor" href="#">#</a></h2>
+      <p>z.ai 的 token 计数与 OpenAI 标准存在差异：</p>
+
+      <table>
+        <tr><th>指标</th><th>OpenAI 标准</th><th>z.ai 实际</th><th>差异</th></tr>
+        <tr><td>prompt_tokens</td><td>1,247</td><td>1,583</td><td>+27%</td></tr>
+        <tr><td>completion_tokens</td><td>512</td><td>641</td><td>+25%</td></tr>
+      </table>
+
+      <h2>坑 3：并发限制无文档 <a class="anchor" href="#">#</a></h2>
+      <p>官方文档写着 Max Plan 支持"高并发"，但实际并发限制 = 3，文档里没写。</p>
+
+      <div class="callout callout-tip">
+        <span class="callout-icon">✅</span>
+        <div><strong>解决方案：</strong>控制并发 ≤ 3，或在客户端加请求队列。</div>
+      </div>
+    </div>
+
+    <!-- Graph preview -->
+    <div class="graph-preview">
+      <div class="graph-canvas">🕸️ 知识图谱可视化区域（D3.js / Canvas）</div>
+      <div class="graph-nodes">
+        <span class="graph-node current">z.ai 踩坑</span>
+        <span class="graph-node">模型能力手册</span>
+        <span class="graph-node">Gateway 优化</span>
+        <span class="graph-node">Kimi Vision</span>
+        <span class="graph-node">Token 计数</span>
+        <span class="graph-node">并发管理</span>
+      </div>
+    </div>
+
+    <!-- Backlinks -->
+    <div class="links-section">
+      <div class="links-title"><span class="icon">←</span> 反向链接</div>
+      <a class="link-item" href="#">
+        <span class="link-arrow">→</span> Hermes Gateway 优化笔记 — 关于 z.ai 的 smart routing 降级问题...
+      </a>
+      <a class="link-item" href="#">
+        <span class="link-arrow">→</span> 模型能力手册 — GLM-5.1 的并发限制参考踩坑记录中的数据...
+      </a>
+      <a class="link-item" href="#">
+        <span class="link-arrow">→</span> Context Budget 空响应问题 — 部分原因与 z.ai 的 token 计数差异有关...
+      </a>
+    </div>
+
+    <!-- Outgoing links -->
+    <div class="links-section" style="margin-top:12px">
+      <div class="links-title"><span class="icon">→</span> 出向链接</div>
+      <a class="link-item" href="#"><span class="link-arrow">→</span> Kimi Vision 回退机制排查</a>
+      <a class="link-item" href="#"><span class="link-arrow">→</span> Context Budget 空响应问题</a>
+    </div>
+  </div>
+</div>
+
+<!-- Right outline -->
+<div class="outline">
+  <div class="outline-title">目录</div>
+  <a href="#" class="active">问题背景</a>
+  <a href="#">Smart Routing 静默降级</a>
+  <a href="#">Token 计数不一致</a>
+  <a href="#">并发限制无文档</a>
+</div>
+
+</body>
+</html>

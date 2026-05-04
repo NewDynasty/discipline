@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docs — Command Center</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;background:#fff;color:#1d1d1f;-webkit-font-smoothing:antialiased}
+
+  /* NAV */
+  .nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.82);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid rgba(0,0,0,.06);height:48px;display:flex;align-items:center;justify-content:center}
+  .nav-inner{max-width:1200px;width:100%;padding:0 22px;display:flex;justify-content:space-between;align-items:center}
+  .nav-brand{font-size:14px;font-weight:700;letter-spacing:-.3px;color:#1d1d1f;text-decoration:none;display:flex;align-items:center;gap:8px}
+  .nav-brand span{color:#0071e3;font-weight:500;font-size:13px}
+  .nav-links{display:flex;gap:24px}
+  .nav-links a{font-size:13.5px;color:#86868b;text-decoration:none;letter-spacing:-.1px}
+  .nav-links a:hover{color:#1d1d1f}
+  .nav-links a.active{color:#0071e3}
+
+  /* LAYOUT */
+  .layout{display:flex;max-width:1200px;margin:0 auto;min-height:calc(100vh - 48px)}
+
+  /* SIDEBAR */
+  .sidebar{width:240px;flex-shrink:0;padding:32px 0 32px 22px;border-right:1px solid #e5e5ea;position:sticky;top:48px;height:calc(100vh - 48px);overflow-y:auto}
+  .sidebar::-webkit-scrollbar{width:0}
+  .sb-section{margin-bottom:28px}
+  .sb-label{font-size:11px;font-weight:600;color:#aeaeb2;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;padding-left:10px}
+  .sb-item{display:block;padding:6px 10px;border-radius:8px;text-decoration:none;color:#1d1d1f;font-size:13.5px;font-weight:400;transition:background .12s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sb-item:hover{background:#f5f5f7}
+  .sb-item.active{background:#0071e3;color:#fff;font-weight:500}
+  .sb-count{font-size:11px;color:#aeaeb2;margin-left:4px}
+  .sb-folder{font-size:13px;font-weight:600;color:#86868b;padding:8px 10px 4px;cursor:pointer;display:flex;align-items:center;gap:4px}
+  .sb-folder .arrow{font-size:10px;transition:transform .15s}
+  .sb-folder.open .arrow{transform:rotate(90deg)}
+  .sb-files{overflow:hidden;max-height:0;transition:max-height .3s ease}
+  .sb-files.open{max-height:600px}
+
+  /* CONTENT */
+  .content{flex:1;padding:48px 48px 80px;min-width:0}
+
+  /* Search */
+  .search-box{margin-bottom:24px;position:relative}
+  .search-box input{width:100%;padding:10px 14px 10px 36px;border:1px solid #e5e5ea;border-radius:10px;font-size:14px;outline:none;transition:border-color .2s}
+  .search-box input:focus{border-color:#0071e3}
+  .search-box svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#aeaeb2}
+  .search-results{margin-top:8px;background:#f5f5f7;border-radius:10px;overflow:hidden}
+  .sr-item{display:block;padding:10px 14px;text-decoration:none;color:#1d1d1f;border-bottom:1px solid #e5e5ea;transition:background .12s}
+  .sr-item:last-child{border-bottom:none}
+  .sr-item:hover{background:#e8e8ed}
+  .sr-folder{font-size:11px;color:#0071e3;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+  .sr-title{font-size:14px;font-weight:500;margin-top:2px}
+
+  /* Breadcrumb */
+  .breadcrumb{font-size:13px;color:#aeaeb2;margin-bottom:20px}
+  .breadcrumb a{color:#0071e3;text-decoration:none}
+  .breadcrumb a:hover{text-decoration:underline}
+
+  /* Doc header */
+  .doc-title{font-size:40px;font-weight:800;letter-spacing:-1.5px;line-height:1.1;margin-bottom:8px}
+  .doc-meta{display:flex;align-items:center;gap:16px;font-size:13px;color:#aeaeb2;margin-bottom:36px;padding-bottom:24px;border-bottom:1px solid #e5e5ea;flex-wrap:wrap}
+  .doc-tag{display:inline-flex;padding:3px 10px;border-radius:980px;font-size:11px;font-weight:600}
+  .tag-compare{background:#e5f0ff;color:#0071e3}
+  .tag-debug{background:#fff4e0;color:#c88200}
+  .tag-pitfall{background:#ffe5e5;color:#ff3b30}
+  .tag-tech{background:#e8f8ed;color:#30d158}
+  .tag-default{background:#f5f5f7;color:#86868b}
+
+  /* Rendered Markdown */
+  .md h1{font-size:32px;font-weight:700;letter-spacing:-.5px;margin:0 0 16px}
+  .md h2{font-size:24px;font-weight:700;letter-spacing:-.5px;margin:40px 0 12px;padding-top:20px;border-top:1px solid #f0f0f0}
+  .md h3{font-size:18px;font-weight:600;margin:28px 0 8px;letter-spacing:-.3px}
+  .md p{font-size:15px;line-height:1.7;color:#424245;margin-bottom:16px}
+  .md ul,.md ol{margin:0 0 16px 24px;font-size:15px;line-height:1.7;color:#424245}
+  .md li{margin-bottom:4px}
+  .md code{background:#f5f5f7;padding:2px 6px;border-radius:4px;font-size:13px;font-family:'SF Mono',Monaco,monospace}
+  .md pre{background:#1d1d1f;color:#f5f5f7;padding:20px;border-radius:12px;overflow-x:auto;margin:0 0 20px;font-size:13px;line-height:1.6}
+  .md pre code{background:none;padding:0;color:inherit}
+  .md blockquote{border-left:3px solid #0071e3;padding:8px 0 8px 20px;margin:0 0 16px;color:#86868b;font-style:italic}
+  .md a{color:#0071e3;text-decoration:none}
+  .md a:hover{text-decoration:underline}
+  .md strong{font-weight:600;color:#1d1d1f}
+  .md table{width:100%;border-collapse:collapse;margin:0 0 16px;font-size:14px}
+  .md th{background:#f5f5f7;padding:10px 14px;text-align:left;font-weight:600;border-bottom:2px solid #e5e5ea}
+  .md td{padding:10px 14px;border-bottom:1px solid #f0f0f0}
+  .md img{max-width:100%;border-radius:8px;margin:8px 0}
+
+  /* Empty state */
+  .empty{text-align:center;padding:80px 20px;color:#aeaeb2}
+  .empty-icon{font-size:48px;margin-bottom:16px}
+  .empty-text{font-size:17px;font-weight:500}
+
+  /* Backlinks */
+  .backlinks{margin-top:48px;padding-top:24px;border-top:1px solid #e5e5ea}
+  .bl-title{font-size:13px;font-weight:600;color:#aeaeb2;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+  .bl-link{display:block;padding:10px 14px;background:#f5f5f7;border-radius:10px;text-decoration:none;color:#1d1d1f;margin-bottom:6px;transition:background .12s}
+  .bl-link:hover{background:#e8e8ed}
+
+  @media(max-width:768px){
+    .sidebar{display:none}
+    .content{padding:24px 22px 60px}
+    .doc-title{font-size:28px}
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="/portal">⚡ Command Center <span>› 文档</span></a>
+    <div class="nav-links">
+      <a href="/portal">总览</a>
+      <a href="/docs/" class="active">文档</a>
+    </div>
+  </div>
+</nav>
+
+<div class="layout">
+  <div class="sidebar" id="sidebar">
+    <div class="search-box">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" placeholder="搜索笔记..." id="search-input">
+      <div class="search-results" id="search-results" style="display:none"></div>
+    </div>
+    <div id="sidebar-tree"></div>
+  </div>
+
+  <div class="content" id="doc-content">
+    <div class="empty">
+      <div class="empty-icon">📄</div>
+      <div class="empty-text">从左侧选择一篇文档开始阅读</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API='/api/docs';
+
+async function api(path,params={}){
+  try{
+    const qs=new URLSearchParams(params).toString();
+    const url=qs?path+'?'+qs:path;
+    const r=await fetch(url);
+    if(!r.ok)throw new Error(r.status);
+    return await r.json();
+  }catch(e){console.warn('API failed:',e);return null}
+}
+
+// Tag class helper
+function tagClass(t){
+  const l=t.toLowerCase();
+  if(l==='compare')return'tag-compare';
+  if(l==='debug')return'tag-debug';
+  if(l==='pitfall')return'tag-pitfall';
+  if(l==='tech')return'tag-tech';
+  return'tag-default';
+}
+
+// Load sidebar tree
+async function loadTree(){
+  const tree=await api(API+'/tree');
+  if(!tree)return;
+  const el=document.getElementById('sidebar-tree');
+  let html='';
+  tree.forEach(section=>{
+    const folderId='folder-'+section.folder;
+    html+=`<div class="sb-section">
+      <div class="sb-folder open" onclick="toggleFolder('${folderId}')">
+        <span class="arrow">▶</span>📁 ${section.folder} <span class="sb-count">${section.files.length}</span>
+      </div>
+      <div class="sb-files open" id="${folderId}">`;
+    section.files.forEach(f=>{
+      html+=`<a class="sb-item" href="#${section.folder}/${f.name}" data-path="${section.folder}/${f.name}.md">${f.name}</a>`;
+    });
+    html+=`</div></div>`;
+  });
+  el.innerHTML=html;
+
+  // Click handlers
+  el.querySelectorAll('.sb-item').forEach(a=>{
+    a.addEventListener('click',e=>{
+      e.preventDefault();
+      el.querySelectorAll('.sb-item').forEach(x=>x.classList.remove('active'));
+      a.classList.add('active');
+      loadDoc(a.dataset.path);
+    });
+  });
+}
+
+function toggleFolder(id){
+  const el=document.getElementById(id);
+  const folder=el.previousElementSibling;
+  el.classList.toggle('open');
+  folder.classList.toggle('open');
+}
+
+// Load document
+async function loadDoc(path){
+  const doc=await api(API+'/content',{path});
+  if(!doc){
+    document.getElementById('doc-content').innerHTML='<div class="empty"><div class="empty-icon">😕</div><div class="empty-text">文档加载失败</div></div>';
+    return;
+  }
+
+  const parts=path.replace('.md','').split('/');
+  const folder=parts[0];
+  const name=parts.slice(1).join('/');
+
+  let tagsHtml='';
+  if(doc.tags&&doc.tags.length){
+    tagsHtml=doc.tags.map(t=>`<span class="doc-tag ${tagClass(t)}">${t}</span>`).join('');
+  }
+
+  document.getElementById('doc-content').innerHTML=`
+    <div class="breadcrumb">
+      <a href="/portal">Command Center</a> › <a href="/docs/">文档</a> › <a href="#">${folder}</a> › ${name}
+    </div>
+    <div class="doc-title">${formatTitle(doc.title)}</div>
+    <div class="doc-meta">
+      ${tagsHtml}
+      ${doc.date?`<span>${doc.date}</span>`:''}
+    </div>
+    <div class="md">${doc.html}</div>
+  `;
+
+  // Update URL hash
+  window.location.hash=path.replace('.md','');
+}
+
+function formatTitle(t){
+  return t.replace(/^(compare|debug|pitfall|tech)-/i,(m,p)=>p.toUpperCase()+' · ');
+}
+
+// Search
+let searchTimer;
+document.getElementById('search-input').addEventListener('input',e=>{
+  clearTimeout(searchTimer);
+  const q=e.target.value.trim();
+  if(q.length<2){
+    document.getElementById('search-results').style.display='none';
+    return;
+  }
+  searchTimer=setTimeout(async()=>{
+    const results=await api(API+'/search',{q});
+    const el=document.getElementById('search-results');
+    if(!results||!results.length){
+      el.style.display='none';
+      return;
+    }
+    el.style.display='block';
+    el.innerHTML=results.map(r=>`
+      <a class="sr-item" href="#${r.path.replace('.md','')}" data-path="${r.path}">
+        <div class="sr-folder">${r.folder}</div>
+        <div class="sr-title">${formatTitle(r.title)}</div>
+      </a>
+    `).join('');
+    el.querySelectorAll('.sr-item').forEach(a=>{
+      a.addEventListener('click',ev=>{
+        ev.preventDefault();
+        el.style.display='none';
+        document.getElementById('search-input').value='';
+        // Activate sidebar item
+        document.querySelectorAll('.sb-item').forEach(x=>x.classList.remove('active'));
+        const sbItem=document.querySelector(`.sb-item[data-path="${a.dataset.path}"]`);
+        if(sbItem)sbItem.classList.add('active');
+        loadDoc(a.dataset.path);
+      });
+    });
+  },300);
+});
+
+// Handle hash navigation
+function handleHash(){
+  const hash=decodeURIComponent(window.location.hash.slice(1));
+  if(hash){
+    const path=hash.includes('/')?hash+'.md':hash;
+    loadDoc(path);
+    // Activate sidebar item after tree loads
+    waitForTree(()=>{
+      const sbItem=document.querySelector(`.sb-item[data-path="${path}"]`);
+      if(sbItem){
+        document.querySelectorAll('.sb-item').forEach(x=>x.classList.remove('active'));
+        sbItem.classList.add('active');
+      }
+    });
+  }
+}
+
+// Wait for sidebar tree to be populated
+function waitForTree(cb){
+  const check=()=>{
+    if(document.querySelectorAll('.sb-item').length>0)cb();
+    else setTimeout(check,50);
+  };
+  check();
+}
+
+// Load first doc if no hash
+function loadFirstDoc(){
+  const first=document.querySelector('.sb-item');
+  if(first){
+    first.classList.add('active');
+    loadDoc(first.dataset.path);
+  }
+}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  await loadTree();
+  handleHash();
+  // If no hash, auto-load first doc
+  if(!window.location.hash.slice(1)){
+    loadFirstDoc();
+  }
+});
+window.addEventListener('hashchange',handleHash);
+</script>
+</body>
+</html>
