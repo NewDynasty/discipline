@@ -462,7 +462,7 @@ app.mount("/static", StaticFiles(directory=PORTAL_DIR), name="static")
 def serve_portal():
     html_path = os.path.join(PORTAL_DIR, "index.html")
     if os.path.exists(html_path):
-        return FileResponse(html_path)
+        return FileResponse(html_path, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
     return JSONResponse({"error": "Portal not found"}, status_code=404)
 
 @app.get("/usage")

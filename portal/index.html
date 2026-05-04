@@ -230,13 +230,19 @@
 <!-- Login button injected into shared nav -->
 <script>
 (function(){
-  var btn=document.createElement('button');
-  btn.id='auth-btn';
-  btn.onclick=toggleAuth;
-  btn.style.cssText='font-size:13px;padding:6px 16px;border-radius:980px;border:1px solid #d2d2d7;background:transparent;color:#86868b;cursor:pointer;font-family:inherit;transition:all .2s';
-  btn.textContent='登录';
-  var nav=document.querySelector('.nav-inner');
-  if(nav)nav.insertBefore(btn,nav.querySelector('.theme-toggle'));
+  function injectAuthBtn(){
+    var nav=document.querySelector('.nav-inner');
+    if(!nav){setTimeout(injectAuthBtn,100);return}
+    if(document.getElementById('auth-btn'))return;
+    var btn=document.createElement('button');
+    btn.id='auth-btn';
+    btn.onclick=toggleAuth;
+    btn.style.cssText='font-size:13px;padding:6px 16px;border-radius:980px;border:1px solid #d2d2d7;background:transparent;color:#86868b;cursor:pointer;font-family:inherit;transition:all .2s';
+    btn.textContent='登录';
+    nav.insertBefore(btn,nav.querySelector('.theme-toggle'));
+    if(typeof updateAuthUI==='function')updateAuthUI();
+  }
+  injectAuthBtn();
 })();
 </script>
 
@@ -264,7 +270,7 @@
 <div class="checkin-bar" id="checkin-bar">
   <div class="cb-left">
     <span class="cb-icon">☀️</span>
-    <span id="cb-status">加载中...</span>
+    <span id="cb-status">未登录</span>
   </div>
   <button class="cb-btn" id="cb-btn" onclick="doQuickCheckin()" style="display:none">打卡</button>
 </div>
@@ -369,21 +375,9 @@
 <footer>Command Center · Dynasty</footer>
 
 <script>
-// Theme management (shared with docs.html via 'cc-theme')
-function initTheme(){
-  // Migrate from old keys
-  let theme=localStorage.getItem('cc-theme')||localStorage.getItem('docs-theme')||localStorage.getItem('portal-theme')||'light';
-  document.documentElement.setAttribute('data-theme',theme);
-  updateThemeIcon(theme);
-  // Clean up old keys, set unified key
-  localStorage.setItem('cc-theme',theme);
-  localStorage.removeItem('docs-theme');
-  localStorage.removeItem('portal-theme');
-}
-
-
+// Auth state
 // Clock
-function tick(){const d=new Date();document.getElementById('clock').textContent=d.toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false})}
+function tick(){const el=document.getElementById('clock');if(!el)return;const d=new Date();el.textContent=d.toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false})}
 tick();setInterval(tick,1000);
 
 // API helper
@@ -645,6 +639,14 @@ async function load(){
       '<div class="k-count">'+b.count+'</div></a>'
     ).join('');
   }
+
+  // Fallback: replace stale "加载中..." with friendly guest prompt
+  document.querySelectorAll('.row-list,.k-grid').forEach(el=>{
+    const rows=el.querySelectorAll('.row,.k-card');
+    if(rows.length===1&&rows[0].textContent.includes('加载中')){
+      el.innerHTML='<div style="color:#86868b;font-size:13px;padding:16px 0;text-align:center">🔒 登录后查看详细数据</div>';
+    }
+  });
 
   // Init auth UI
   updateAuthUI();
