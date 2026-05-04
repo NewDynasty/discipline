@@ -834,10 +834,21 @@ _kr = _APIRouter(prefix="/api/knowledge", tags=["knowledge"])
 _HERMES_HOME = Path("~/.hermes").expanduser()
 _REPO_ROOT = Path(_k.__file__).resolve().parent.parent.parent  # hermes-agent/
 
+# Simple TTL cache for knowledge index (avoids rebuilding on every request)
+_k_cache: list = []
+_k_cache_ts: float = 0.0
+_K_CACHE_TTL = 60.0  # seconds
 
 def _kitems():
+    global _k_cache, _k_cache_ts
+    import time
+    now = time.time()
+    if _k_cache and (now - _k_cache_ts) < _K_CACHE_TTL:
+        return _k_cache
     idx = _k._shared_dir(_HERMES_HOME) / "knowledge_index.jsonl"
-    return _k._load_or_build(idx, _REPO_ROOT, _HERMES_HOME)
+    _k_cache = _k._load_or_build(idx, _REPO_ROOT, _HERMES_HOME)
+    _k_cache_ts = now
+    return _k_cache
 
 
 def _item_json(it: _k.KnowledgeItem) -> dict:

@@ -143,6 +143,11 @@
   [data-theme="dark"] .sec-sub{color:#94a3b8}
   [data-theme="dark"] .quick-pill{background:#1e293b;color:#e2e8f0}
   [data-theme="dark"] .quick-pill:hover{background:#334155}
+  .qp-status{display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:6px;vertical-align:middle;transition:background .3s;background:#ccc}
+  .qp-status.on{background:#34c759}
+  .qp-status.off{background:#ff6b6b}
+  [data-theme="dark"] .qp-status{background:#475569}
+  [data-theme="dark"] .quick-pill:hover{background:#334155}
   [data-theme="dark"] .row-list{border-top-color:#1e293b}
   [data-theme="dark"] .row{color:#e2e8f0;border-bottom-color:#1e293b}
   [data-theme="dark"] .row:hover{background:#1e293b}
@@ -299,10 +304,10 @@
     <div class="sec-title">从这里开始。</div>
   </div>
   <div class="quick-row">
-    <a class="quick-pill" href="http://localhost:8899"><span class="qp-icon">☀️</span>Early Rise</a>
-    <a class="quick-pill" href="http://localhost:8000"><span class="qp-icon">🤖</span>Hermes</a>
-    <a class="quick-pill" href="http://localhost:8090"><span class="qp-icon">⚡</span>Codex</a>
-    <a class="quick-pill" href="http://localhost:27124"><span class="qp-icon">📋</span>Kanban</a>
+    <a class="quick-pill" id="qp-earlyrise" href="http://localhost:8899"><span class="qp-icon">☀️</span>Early Rise<span class="qp-status" id="qps-earlyrise"></span></a>
+    <a class="quick-pill" id="qp-hermes" href="http://localhost:8000"><span class="qp-icon">🤖</span>Hermes<span class="qp-status" id="qps-hermes"></span></a>
+    <a class="quick-pill" id="qp-codex" href="http://localhost:8090"><span class="qp-icon">⚡</span>Codex<span class="qp-status" id="qps-codex"></span></a>
+    <a class="quick-pill" id="qp-kanban" href="http://localhost:27124"><span class="qp-icon">📋</span>Kanban<span class="qp-status" id="qps-kanban"></span></a>
     <a class="quick-pill" href="/docs"><span class="qp-icon">📚</span>文档中心</a>
     <a class="quick-pill" href="https://github.com/NewDynasty"><span class="qp-icon">🐙</span>GitHub</a>
     <a class="quick-pill" href="/knowledge"><span class="qp-icon">🧠</span>知识库</a>
@@ -629,6 +634,19 @@ async function load(){
       cal.appendChild(c);
     }
   }catch(e){console.error('heatmap',e);}
+
+  // Quick-access service status dots
+  try{
+    const status=await api('/api/portal/status');
+    const map={'Hermes Gateway':'hermes','Early Rise':'earlyrise','Codex Server':'codex','Obsidian Kanban':'kanban'};
+    (status||[]).forEach(s=>{
+      const id=map[s.name];
+      if(id){
+        const dot=document.getElementById('qps-'+id);
+        if(dot){dot.className='qp-status '+(s.online?'on':'off');dot.title=s.name+(s.online?' · 在线':' · 离线');}
+      }
+    });
+  }catch(e){console.error('status dots',e);}
 
   // Projects (API-driven)
   renderProjects(projects);

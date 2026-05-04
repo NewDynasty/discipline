@@ -254,6 +254,16 @@
 </div>
 
 <div id="panel-blackboard" class="panel">
+  <button class="form-toggle" onclick="toggleForm('bbForm')">＋ 写黑板</button>
+  <div id="bbForm" class="form-box">
+    <div class="form-row"><label>专家ID</label><input name="expert_id" placeholder="专家 ID"></div>
+    <div class="form-row"><label>项目</label><input name="project" placeholder="项目名称"></div>
+    <div class="form-row"><label>分类</label><select name="category"><option value="progress">进展</option><option value="conflict">冲突</option><option value="note">备注</option></select></div>
+    <div class="form-row"><label>标题</label><input name="title" placeholder="标题"></div>
+    <div class="form-row"><label>正文</label><textarea name="body" placeholder="正文内容"></textarea></div>
+    <button class="form-submit" onclick="submitBlackboard()">提交</button>
+    <div id="bbMsg" class="form-msg"></div>
+  </div>
   <div id="blackboardList"></div>
 </div>
 
@@ -488,6 +498,114 @@ function sensBadge(s) {
   if (s === 'internal') return 'badge-orange';
   return 'badge-gray';
 }
+
+// Form toggle
+function toggleForm(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+// Collect form fields into an object
+function formToObj(formEl) {
+  var obj = {};
+  formEl.querySelectorAll('input,textarea,select').forEach(function(el) {
+    obj[el.name] = el.value;
+  });
+  return obj;
+}
+
+// Submit decision
+async function submitDecision() {
+  var form = document.getElementById('decForm');
+  var msg = document.getElementById('decMsg');
+  var data = formToObj(form);
+  if (data.tags) data.tags = data.tags.split(',').map(function(t) { return t.trim(); }).filter(Boolean);
+  msg.className = 'form-msg';
+  try {
+    var res = await fetch(API + '/publish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    msg.className = 'form-msg ok';
+    msg.textContent = '发布成功';
+    form.querySelectorAll('input,textarea').forEach(function(el) { el.value = ''; });
+    form.classList.remove('open');
+    loadDecisions();
+  } catch (e) {
+    msg.className = 'form-msg err';
+    msg.textContent = '错误：' + e.message;
+  }
+}
+
+// Submit expert
+async function submitExpert() {
+  var form = document.getElementById('expForm');
+  var msg = document.getElementById('expMsg');
+  var data = formToObj(form);
+  if (data.capabilities) data.capabilities = data.capabilities.split(',').map(function(t) { return t.trim(); }).filter(Boolean);
+  msg.className = 'form-msg';
+  try {
+    var res = await fetch(API + '/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    msg.className = 'form-msg ok';
+    msg.textContent = '注册成功';
+    form.querySelectorAll('input').forEach(function(el) { el.value = ''; });
+    form.classList.remove('open');
+    loadExperts();
+  } catch (e) {
+    msg.className = 'form-msg err';
+    msg.textContent = '错误：' + e.message;
+  }
+}
+
+// Submit blackboard
+async function submitBlackboard() {
+  var form = document.getElementById('bbForm');
+  var msg = document.getElementById('bbMsg');
+  var data = formToObj(form);
+  msg.className = 'form-msg';
+  try {
+    var res = await fetch(API + '/blackboard', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    msg.className = 'form-msg ok';
+    msg.textContent = '发布成功';
+    form.querySelectorAll('input,textarea').forEach(function(el) { el.value = ''; });
+    form.classList.remove('open');
+    loadBlackboard();
+  } catch (e) {
+    msg.className = 'form-msg err';
+    msg.textContent = '错误：' + e.message;
+  }
+}
+
+// Load recent assets on page load
+async function loadRecentAssets() {
+  var list = document.getElementById('assetsList');
+  try {
+    var res = await fetch(API + '/search?limit=20');
+    var data = await res.json();
+    currentItems = Array.isArray(data) ? data : [];
+    if (currentItems.length === 0) {
+      list.innerHTML = '<div class="empty"><div class="empty-icon">📂</div>暂无知识资产</div>';
+      return;
+    }
+    list.innerHTML = currentItems.map(function(it, i) {
+      return '<div class="item" onclick="showDetail(' + i + ')">' +
+        '<div class="item-icon">' + typeIcon(it.type) + '</div>' +
+        '<div class="item-body">' +
+          '<div class="item-title">' + esc(it.title) + '</div>' +
+          '<div class="item-desc">' + esc(it.summary || '') + '</div>' +
+        '</div>' +
+        '<div class="item-meta">' +
+          '<span class="item-badge ' + sensBadge(it.sensitivity) + '">' + (it.sensitivity || 'public') + '</span>' +
+          (it.project ? '<div class="item-date">' + esc(it.project) + '</div>' : '') +
+        '</div>' +
+      '</div>';
+    }).join('');
+  } catch (e) {
+    list.innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div>加载失败：' + esc(e.message) + '</div>';
+  }
+}
+
+// Auto-load recent assets
+loadRecentAssets();
 </script>
 </body>
 </html>
