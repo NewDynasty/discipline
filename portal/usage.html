@@ -58,13 +58,7 @@ h1{font-size:28px;font-weight:800;letter-spacing:-.5px;margin-bottom:6px}
 </style>
 </head>
 <body>
-<nav class="nav">
-  <a class="nav-brand" href="/portal">⚡ Command Center</a>
-  <a href="/portal#quick">快速访问</a>
-  <a href="/docs">📚 文档</a>
-  <a href="/usage" style="color:#0071e3;font-weight:600">📊 用量</a>
-  <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">🌓</button>
-</nav>
+<script src="/static/shared-nav.js"></script>
 <div class="container">
   <h1>AI 用量面板</h1>
   <p class="sub">z.ai (GLM) 和 Kimi (Moonshot) 的实时配额使用情况</p>
@@ -139,18 +133,6 @@ function render(d){
 
   document.getElementById('content').innerHTML=html;
 }
-
-function toggleTheme(){
-  const isDark=document.documentElement.getAttribute('data-theme')==='dark';
-  document.documentElement.setAttribute('data-theme',isDark?'light':'dark');
-  localStorage.setItem('cc_theme',isDark?'light':'dark');
-}
-(function(){
-  const t=localStorage.getItem('cc_theme');
-  if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches)){
-    document.documentElement.setAttribute('data-theme','dark');
-  }
-})();
 
 load();
 </script>

@@ -18,9 +18,9 @@ from pydantic import BaseModel
 
 # --- Config ---
 DB_PATH = os.environ.get("EARLY_RISE_DB", "data/earlyrise.db")
-SECRET_TOKEN = os.environ.get("EARLY_RISE_TOKEN", "earlyrise2026")
+SECRET_TOKEN=os.env...EN", "earlyrise2026")
 STATIC_DIR = os.environ.get("EARLY_RISE_STATIC", os.path.join(os.path.dirname(__file__), "..", "frontend"))
-TOKEN_EXPIRE_HOURS = int(os.environ.get("TOKEN_EXPIRE_HOURS", "168"))
+TOKEN_EXPIRE_HOURS=int(os...RS", "168"))
 
 # --- Database ---
 def get_db():
@@ -827,141 +827,146 @@ def api_usage():
 # ─── Knowledge Hub API ───────────────────────────────────────────────
 import sys as _sys
 _sys.path.insert(0, str(Path("~/.hermes/hermes-agent").expanduser()))
-from fastapi import APIRouter as _APIRouter
-from hermes_cli import knowledge as _k
+try:
+    from fastapi import APIRouter as _APIRouter
+    from hermes_cli import knowledge as _k
+    _KNOWLEDGE_AVAILABLE = True
+except (ImportError, ModuleNotFoundError):
+    _KNOWLEDGE_AVAILABLE = False
 
-_kr = _APIRouter(prefix="/api/knowledge", tags=["knowledge"])
-_HERMES_HOME = Path("~/.hermes").expanduser()
-_REPO_ROOT = Path(_k.__file__).resolve().parent.parent.parent  # hermes-agent/
+if _KNOWLEDGE_AVAILABLE:
+        _kr = _APIRouter(prefix="/api/knowledge", tags=["knowledge"])
+    _HERMES_HOME = Path("~/.hermes").expanduser()
+    _REPO_ROOT = Path(_k.__file__).resolve().parent.parent.parent  # hermes-agent/
 
-# Simple TTL cache for knowledge index (avoids rebuilding on every request)
-_k_cache: list = []
-_k_cache_ts: float = 0.0
-_K_CACHE_TTL = 60.0  # seconds
+    # Simple TTL cache for knowledge index (avoids rebuilding on every request)
+    _k_cache: list = []
+    _k_cache_ts: float = 0.0
+    _K_CACHE_TTL = 60.0  # seconds
 
-def _kitems():
-    global _k_cache, _k_cache_ts
-    import time
-    now = time.time()
-    if _k_cache and (now - _k_cache_ts) < _K_CACHE_TTL:
+    def _kitems():
+        global _k_cache, _k_cache_ts
+        import time
+        now = time.time()
+        if _k_cache and (now - _k_cache_ts) < _K_CACHE_TTL:
+            return _k_cache
+        idx = _k._shared_dir(_HERMES_HOME) / "knowledge_index.jsonl"
+        _k_cache = _k._load_or_build(idx, _REPO_ROOT, _HERMES_HOME)
+        _k_cache_ts = now
         return _k_cache
-    idx = _k._shared_dir(_HERMES_HOME) / "knowledge_index.jsonl"
-    _k_cache = _k._load_or_build(idx, _REPO_ROOT, _HERMES_HOME)
-    _k_cache_ts = now
-    return _k_cache
 
 
-def _item_json(it: _k.KnowledgeItem) -> dict:
-    return {
-        "id": it.id, "type": it.type, "title": it.title, "summary": it.summary,
-        "project": it.project, "tags": it.tags, "sensitivity": it.sensitivity,
-        "status": it.status, "updated_at": it.updated_at,
-    }
+    def _item_json(it: _k.KnowledgeItem) -> dict:
+        return {
+            "id": it.id, "type": it.type, "title": it.title, "summary": it.summary,
+            "project": it.project, "tags": it.tags, "sensitivity": it.sensitivity,
+            "status": it.status, "updated_at": it.updated_at,
+        }
 
 
-@_kr.get("/search")
-def knowledge_search(q: str = "", project: str = None, scope: str = None, limit: int = 20):
-    items = _kitems()
-    results = _k.search_items(items, q, scope=scope, project=project, limit=limit)
-    return [_item_json(it) for it in results]
+    @_kr.get("/search")
+    def knowledge_search(q: str = "", project: str = None, scope: str = None, limit: int = 20):
+        items = _kitems()
+        results = _k.search_items(items, q, scope=scope, project=project, limit=limit)
+        return [_item_json(it) for it in results]
 
 
-@_kr.get("/items/{item_id}")
-def knowledge_item(item_id: str):
-    items = _kitems()
-    item = _k.get_item(items, item_id)
-    if item is None:
-        return JSONResponse({"error": "not found"}, status_code=404)
-    d = _item_json(item)
-    try:
-        d["content"] = _k.redact_secrets(_k.read_item_content(item))
-    except PermissionError:
-        d["content"] = "[restricted]"
-    return d
+    @_kr.get("/items/{item_id}")
+    def knowledge_item(item_id: str):
+        items = _kitems()
+        item = _k.get_item(items, item_id)
+        if item is None:
+            return JSONResponse({"error": "not found"}, status_code=404)
+        d = _item_json(item)
+        try:
+            d["content"] = _k.redact_secrets(_k.read_item_content(item))
+        except PermissionError:
+            d["content"] = "[restricted]"
+        return d
 
 
-@_kr.get("/decisions")
-def knowledge_decisions(project: str = None, author: str = None):
-    decisions = _k.load_decisions(project=project, author=author, hermes_home=_HERMES_HOME)
-    return [{
-        "id": d.id, "project": d.project, "title": d.title, "author": d.author,
-        "body": _k.redact_secrets(d.body), "rationale": _k.redact_secrets(d.rationale),
-        "alternatives": _k.redact_secrets(d.alternatives), "tags": d.tags,
-        "created_at": d.created_at, "superseded_by": d.superseded_by,
-    } for d in decisions]
+    @_kr.get("/decisions")
+    def knowledge_decisions(project: str = None, author: str = None):
+        decisions = _k.load_decisions(project=project, author=author, hermes_home=_HERMES_HOME)
+        return [{
+            "id": d.id, "project": d.project, "title": d.title, "author": d.author,
+            "body": _k.redact_secrets(d.body), "rationale": _k.redact_secrets(d.rationale),
+            "alternatives": _k.redact_secrets(d.alternatives), "tags": d.tags,
+            "created_at": d.created_at, "superseded_by": d.superseded_by,
+        } for d in decisions]
 
 
-@_kr.post("/publish")
-def knowledge_publish(body: dict = None):
-    body = body or {}
-    p = _k.publish_decision(
-        project=body.get("project", ""), title=body.get("title", ""),
-        author=body.get("author", ""), body=body.get("body", ""),
-        rationale=body.get("rationale", ""), alternatives=body.get("alternatives", ""),
-        tags=body.get("tags", []), hermes_home=_HERMES_HOME,
-    )
-    return {"ok": True, "file": p.name}
+    @_kr.post("/publish")
+    def knowledge_publish(body: dict = None):
+        body = body or {}
+        p = _k.publish_decision(
+            project=body.get("project", ""), title=body.get("title", ""),
+            author=body.get("author", ""), body=body.get("body", ""),
+            rationale=body.get("rationale", ""), alternatives=body.get("alternatives", ""),
+            tags=body.get("tags", []), hermes_home=_HERMES_HOME,
+        )
+        return {"ok": True, "file": p.name}
 
 
-@_kr.get("/experts")
-def knowledge_experts(project: str = None, role: str = None):
-    experts = _k.load_experts(project=project, role=role, hermes_home=_HERMES_HOME)
-    return [{
-        "id": e.id, "role": e.role, "project": e.project,
-        "capabilities": e.capabilities, "status": e.status,
-        "registered_at": e.registered_at, "last_heartbeat": e.last_heartbeat,
-    } for e in experts]
+    @_kr.get("/experts")
+    def knowledge_experts(project: str = None, role: str = None):
+        experts = _k.load_experts(project=project, role=role, hermes_home=_HERMES_HOME)
+        return [{
+            "id": e.id, "role": e.role, "project": e.project,
+            "capabilities": e.capabilities, "status": e.status,
+            "registered_at": e.registered_at, "last_heartbeat": e.last_heartbeat,
+        } for e in experts]
 
 
-@_kr.post("/register")
-def knowledge_register(body: dict = None):
-    body = body or {}
-    _k.register_expert(
-        expert_id=body.get("expert_id", ""), role=body.get("role", ""),
-        project=body.get("project", ""), capabilities=body.get("capabilities", []),
-        hermes_home=_HERMES_HOME,
-    )
-    return {"ok": True}
+    @_kr.post("/register")
+    def knowledge_register(body: dict = None):
+        body = body or {}
+        _k.register_expert(
+            expert_id=body.get("expert_id", ""), role=body.get("role", ""),
+            project=body.get("project", ""), capabilities=body.get("capabilities", []),
+            hermes_home=_HERMES_HOME,
+        )
+        return {"ok": True}
 
 
-@_kr.post("/heartbeat")
-def knowledge_heartbeat(body: dict = None):
-    ok = _k.heartbeat_expert((body or {}).get("expert_id", ""), hermes_home=_HERMES_HOME)
-    return {"ok": ok}
+    @_kr.post("/heartbeat")
+    def knowledge_heartbeat(body: dict = None):
+        ok = _k.heartbeat_expert((body or {}).get("expert_id", ""), hermes_home=_HERMES_HOME)
+        return {"ok": ok}
 
 
-@_kr.post("/deregister")
-def knowledge_deregister(body: dict = None):
-    ok = _k.deregister_expert((body or {}).get("expert_id", ""), hermes_home=_HERMES_HOME)
-    return {"ok": ok}
+    @_kr.post("/deregister")
+    def knowledge_deregister(body: dict = None):
+        ok = _k.deregister_expert((body or {}).get("expert_id", ""), hermes_home=_HERMES_HOME)
+        return {"ok": ok}
 
 
-@_kr.get("/blackboard")
-def knowledge_blackboard(project: str = None, category: str = None, limit: int = 20):
-    entries = _k.load_blackboard(project=project, category=category, hermes_home=_HERMES_HOME)
-    return entries[-limit:]
+    @_kr.get("/blackboard")
+    def knowledge_blackboard(project: str = None, category: str = None, limit: int = 20):
+        entries = _k.load_blackboard(project=project, category=category, hermes_home=_HERMES_HOME)
+        return entries[-limit:]
 
 
-@_kr.post("/blackboard")
-def knowledge_blackboard_post(body: dict = None):
-    body = body or {}
-    p = _k.post_to_blackboard(
-        expert_id=body.get("expert_id", ""), project=body.get("project", ""),
-        category=body.get("category", "note"), title=body.get("title", ""),
-        body=body.get("body", ""), hermes_home=_HERMES_HOME,
-    )
-    return {"ok": True, "file": p.name}
+    @_kr.post("/blackboard")
+    def knowledge_blackboard_post(body: dict = None):
+        body = body or {}
+        p = _k.post_to_blackboard(
+            expert_id=body.get("expert_id", ""), project=body.get("project", ""),
+            category=body.get("category", "note"), title=body.get("title", ""),
+            body=body.get("body", ""), hermes_home=_HERMES_HOME,
+        )
+        return {"ok": True, "file": p.name}
 
 
-@_kr.get("/report")
-def knowledge_report(project: str = "", role: str = None):
-    report = _k.generate_context_report(
-        project=project, role=role, hermes_home=_HERMES_HOME,
-    )
-    return {"report": _k.redact_secrets(report)}
+    @_kr.get("/report")
+    def knowledge_report(project: str = "", role: str = None):
+        report = _k.generate_context_report(
+            project=project, role=role, hermes_home=_HERMES_HOME,
+        )
+        return {"report": _k.redact_secrets(report)}
 
 
-app.include_router(_kr)
+    app.include_router(_kr)
 
 @app.get("/knowledge")
 @app.get("/knowledge/")

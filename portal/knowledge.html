@@ -15,8 +15,8 @@
   .nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.82);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid rgba(0,0,0,.06);height:48px;display:flex;align-items:center;justify-content:center}
   .nav-inner{max-width:980px;width:100%;padding:0 22px;display:flex;justify-content:space-between;align-items:center}
   .nav-brand{font-size:14px;font-weight:700;letter-spacing:-.3px;color:#1d1d1f;text-decoration:none}
-  .nav-right{display:flex;align-items:center;gap:16px}
   .nav-links{display:flex;gap:24px}
+  .nav-clock{font-size:12.5px;color:#aeaeb2;font-variant-numeric:tabular-nums}
   .nav-links a{font-size:13.5px;color:#86868b;text-decoration:none;letter-spacing:-.1px}
   .nav-links a:hover{color:#1d1d1f}
   .nav-links a.active{color:#1d1d1f;font-weight:600}
@@ -105,6 +105,10 @@
   [data-theme="dark"] .nav-links a.active{color:#e2e8f0}
   [data-theme="dark"] .theme-toggle:hover{background:#1e293b}
   [data-theme="dark"] .theme-toggle svg{color:#94a3b8}
+  [data-theme="dark"] .nav-clock{color:#64748b}
+  [data-theme="dark"] .nav-hamburger span{background:#e2e8f0}
+  [data-theme="dark"] .nav-mobile{background:rgba(10,10,15,.96);border-bottom-color:#1e293b}
+  [data-theme="dark"] .nav-mobile a{color:#e2e8f0;border-bottom-color:#1e293b}
 
   [data-theme="dark"] .hero-sub{color:#94a3b8}
   [data-theme="dark"] .tab-btn{background:#1e293b;color:#94a3b8}
@@ -176,28 +180,27 @@
     .tabs{flex-wrap:wrap}
     .expert-grid{grid-template-columns:1fr}
   }
+
+  /* Hamburger & mobile nav */
+  .nav-hamburger{display:none}
+  .nav-mobile{display:none}
+  @media(max-width:768px){
+    .nav-links{display:none}
+    .nav-inner{padding:0 16px}
+    .nav-hamburger{display:flex;flex-direction:column;gap:4px;background:none;border:none;cursor:pointer;padding:4px}
+    .nav-hamburger span{display:block;width:18px;height:1.5px;background:#1d1d1f;border-radius:2px;transition:all .2s}
+    .nav-menu-open .nav-hamburger span:nth-child(1){transform:rotate(45deg) translate(3px,3px)}
+    .nav-menu-open .nav-hamburger span:nth-child(2){opacity:0}
+    .nav-menu-open .nav-hamburger span:nth-child(3){transform:rotate(-45deg) translate(3px,-3px)}
+    .nav-mobile{display:none;position:absolute;top:48px;left:0;right:0;background:rgba(255,255,255,.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(0,0,0,.06);padding:12px 22px;z-index:99}
+    .nav-menu-open .nav-mobile{display:flex;flex-direction:column;gap:4px}
+    .nav-mobile a{font-size:15px;color:#1d1d1f;text-decoration:none;padding:12px 0;border-bottom:1px solid rgba(0,0,0,.06);display:block}
+    .nav-mobile a:last-child{border-bottom:none}
+  }
 </style>
 </head>
 <body>
-
-<nav class="nav">
-  <div class="nav-inner">
-    <a href="/portal" class="nav-brand">⚡ Command Center</a>
-    <div class="nav-right">
-      <div class="nav-links">
-        <a href="/portal">Portal</a>
-        <a href="/docs/Notes">文档</a>
-        <a href="/graph">Graph</a>
-        <a href="/knowledge" class="active">知识库</a>
-      </div>
-      <button class="theme-toggle" id="theme-toggle" title="切换主题">
-        <svg id="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-        <svg id="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
-      </button>
-    </div>
-  </div>
-</nav>
-
+<script src="/static/shared-nav.js"></script>
 <div class="hero">
   <h1>知识库</h1>
   <p class="hero-sub">搜索资产、查看决策、跟踪专家和黑板</p>
@@ -292,6 +295,8 @@ function toggleTheme(){
 }
 document.getElementById('theme-toggle').onclick = toggleTheme;
 initTheme();
+function tick(){var d=new Date();document.getElementById('clock').textContent=d.toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false})}
+tick();setInterval(tick,1000);
 
 // Listen for storage changes (if portal toggles theme in another tab)
 window.addEventListener('storage', function(e) {
