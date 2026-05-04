@@ -207,6 +207,17 @@
 [data-theme="dark"] .checkin-bar{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.08);}
 [data-theme="dark"] .cb-btn{background:#f59e0b;color:#0a0a0f;}
 @media(max-width:768px){.checkin-bar{margin:10px 16px 0;padding:12px 16px;border-radius:12px;}.cb-btn{padding:10px 32px;font-size:16px;}}
+.mini-cal{max-width:980px;margin:10px auto 0;display:flex;gap:3px;flex-wrap:wrap;padding:0 22px;}
+.mc-cell{width:13px;height:13px;border-radius:3px;background:rgba(0,0,0,.05);}
+.mc-cell.pass{background:#34c759;}
+.mc-cell.fail{background:#ff6b6b;}
+.mc-cell.future{background:transparent;border:1px dashed rgba(0,0,0,.1);}
+.mc-cell.today{box-shadow:0 0 0 2px #0071e3;}
+[data-theme="dark"] .mc-cell{background:rgba(255,255,255,.06);}
+[data-theme="dark"] .mc-cell.pass{background:#34c759;}
+[data-theme="dark"] .mc-cell.fail{background:#ff6b6b;}
+[data-theme="dark"] .mc-cell.future{border-color:rgba(255,255,255,.1);}
+@media(max-width:768px){.mini-cal{padding:0 16px;gap:2px;}.mc-cell{width:11px;height:11px;}}
 </style>
 </head>
 <body>
@@ -241,6 +252,7 @@
     <a href="#cron" onclick="document.getElementById('main-nav').classList.remove('nav-menu-open')">定时任务</a>
     <a href="#research" onclick="document.getElementById('main-nav').classList.remove('nav-menu-open')">研究</a>
     <a href="#kanban" onclick="document.getElementById('main-nav').classList.remove('nav-menu-open')">看板</a>
+    <a href="/knowledge">🧠 知识库</a>
   </div>
 </nav>
 
@@ -273,6 +285,8 @@
   <button class="cb-btn" id="cb-btn" onclick="doQuickCheckin()" style="display:none">打卡</button>
 </div>
 
+<div class="mini-cal" id="mini-cal"></div>
+
 <div class="status" id="status-bar"></div>
 
 <div class="divider"></div>
@@ -290,6 +304,7 @@
     <a class="quick-pill" href="http://localhost:27124"><span class="qp-icon">📋</span>Kanban</a>
     <a class="quick-pill" href="/docs"><span class="qp-icon">📚</span>文档中心</a>
     <a class="quick-pill" href="https://github.com/NewDynasty"><span class="qp-icon">🐙</span>GitHub</a>
+    <a class="quick-pill" href="/knowledge"><span class="qp-icon">🧠</span>知识库</a>
     <a class="quick-pill" href="/api/usage"><span class="qp-icon">📊</span>用量</a>
   </div>
 </div>
@@ -401,7 +416,10 @@ tick();setInterval(tick,1000);
 
 // API helper
 async function api(path){
-  try{const r=await fetch(path);if(!r.ok)throw new Error(r.status);return await r.json()}
+  const opts={};
+  const token=localStorage.getItem('cc_token');
+  if(token)opts.headers={'Authorization':'Bearer '+token};
+  try{const r=await fetch(path,opts);if(!r.ok)throw new Error(r.status);return await r.json()}
   catch(e){console.warn('API '+path+' failed:',e);return null}
 }
 
@@ -512,6 +530,7 @@ async function doLogin() {
     localStorage.setItem('cc_token', authToken);
     closeAuthModal();
     updateAuthUI();
+    load();
   } catch (e) {
     document.getElementById('auth-error').textContent = '网络错误';
     document.getElementById('auth-error').style.display = 'block';
@@ -576,7 +595,7 @@ async function load(){
     const today=await api('/api/checkin/today');
     const statusEl=document.getElementById('cb-status');
     const btn=document.getElementById('cb-btn');
-    if(today&&today.date){
+    if(today&&today.wake_time){
       statusEl.innerHTML='今日 <span class="cb-done">'+today.wake_time+'</span> 已打卡 · 连续 '+((er&&er.streak)||'?')+' 天';
       btn.style.display='none';
     }else{
@@ -584,6 +603,31 @@ async function load(){
       btn.style.display='inline-block';
     }
   }catch(e){document.getElementById('cb-status').textContent='打卡状态未知';}
+
+  // Mini calendar heatmap (always render, data or not)
+  try{
+    const hm=await api('/api/heatmap')||[];
+    const cal=document.getElementById('mini-cal');
+    cal.innerHTML='';
+    const now=new Date();
+    const y=now.getFullYear(),m=now.getMonth();
+    const daysInMonth=new Date(y,m+1,0).getDate();
+    const map={};
+    hm.forEach(r=>{map[r.date]=r.pass;});
+    const pad=new Date(y,m,1).getDay();
+    for(let i=0;i<pad;i++){const c=document.createElement('div');c.className='mc-cell';c.style.background='transparent';cal.appendChild(c);}
+    for(let d=1;d<=daysInMonth;d++){
+      const ds=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+      const c=document.createElement('div');
+      c.className='mc-cell';
+      c.title=ds;
+      if(ds===now.toISOString().slice(0,10))c.classList.add('today');
+      if(d>now.getDate()){c.classList.add('future');}
+      else if(map[ds]===1||map[ds]===true){c.classList.add('pass');}
+      else if(map[ds]===0||map[ds]===false){c.classList.add('fail');}
+      cal.appendChild(c);
+    }
+  }catch(e){console.error('heatmap',e);}
 
   // Projects (API-driven)
   renderProjects(projects);
