@@ -1,15 +1,15 @@
-version: "3.8"
-
 services:
-  earlyrise:
+  discipline:
     build: .
-    container_name: early-rise
+    container_name: discipline
     restart: unless-stopped
     ports:
       - "8899:8899"
     environment:
-      - EARLY_RISE_TOKEN=earlyrise2026    # 改成你的密码
+      - EARLY_RISE_TOKEN=${DISCIPLINE_TOKEN:-changeme}
       - EARLY_RISE_DB=/app/data/earlyrise.db
-      - EARLY_RISE_STATIC=./frontend
+      - EARLY_RISE_STATIC=./portal
+      - OBSIDIAN_VAULT=/vault
     volumes:
-      - ./data:/app/data                  # SQLite 持久化
+      - ./data:/app/data
+      - ${OBSIDIAN_VAULT_PATH:-~/Documents/Obsidian Vault}:/vault:ro

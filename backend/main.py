@@ -112,7 +112,7 @@ def startup():
     init_db()
 
 # --- Projects API (from Obsidian progress.md frontmatter) ---
-OBSIDIAN_VAULT = os.path.expanduser("~/Documents/Obsidian Vault")
+OBSIDIAN_VAULT = os.environ.get("OBSIDIAN_VAULT", os.path.expanduser("~/Documents/Obsidian Vault"))
 
 def _parse_frontmatter(content: str) -> dict:
     """Parse YAML frontmatter from markdown content."""
@@ -354,8 +354,6 @@ def serve_index():
 
 import glob
 import re
-
-OBSIDIAN_VAULT = os.environ.get("OBSIDIAN_VAULT", os.path.expanduser("~/Documents/Obsidian Vault"))
 
 def _check_port(host: str, port: int, timeout: float = 1.0) -> bool:
     """TCP connect check for service health."""
@@ -667,7 +665,10 @@ def serve_docs(full_path: str = ""):
 
 
 # --- Knowledge Graph (standalone module) ---
-from backend.graph import router as graph_router
+try:
+    from backend.graph import router as graph_router
+except ImportError:
+    from graph import router as graph_router
 app.include_router(graph_router)
 
 @app.get("/graph")
