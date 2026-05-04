@@ -162,7 +162,7 @@ def list_projects():
             meta["source_file"] = os.path.basename(fpath)
             # Build clickable URL: prefer port (localhost), then GitHub
             if meta.get("port"):
-                meta["url"] = f"http://localhost:{meta['port']}"
+                meta["url"] = f"/" if meta["port"] == 8899 else "#"
             elif meta.get("github"):
                 meta["url"] = f"https://github.com/{meta['github']}"
             projects.append(meta)
@@ -366,12 +366,12 @@ def _check_port(host: str, port: int, timeout: float = 1.0) -> bool:
         return False
 
 SERVICES = [
-    {"name": "Hermes Gateway", "port": 8000, "url": "http://localhost:8000"},
-    {"name": "Early Rise", "port": 8899, "url": "http://localhost:8899"},
-    {"name": "Codex Server", "port": 8090, "url": "http://localhost:8090"},
-    {"name": "Obsidian Kanban", "port": 27124, "url": "http://localhost:27124"},
-    {"name": "Sync-Hub", "port": 8081, "url": "http://localhost:8081"},
-    {"name": "RSSHub", "port": 1200, "url": "http://localhost:1200"},
+    {"name": "Hermes Gateway", "port": 8000},
+    {"name": "Early Rise", "port": 8899},
+    {"name": "Codex Server", "port": 8090},
+    {"name": "Obsidian Kanban", "port": 27124},
+    {"name": "Sync-Hub", "port": 8081},
+    {"name": "RSSHub", "port": 1200},
 ]
 
 @app.get("/api/portal/status")
@@ -383,7 +383,6 @@ def portal_status():
         results.append({
             "name": svc["name"],
             "port": svc["port"],
-            "url": svc.get("url", "#"),
             "online": online,
         })
     return results
