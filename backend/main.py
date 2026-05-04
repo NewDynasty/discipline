@@ -18,9 +18,9 @@ from pydantic import BaseModel
 
 # --- Config ---
 DB_PATH = os.environ.get("EARLY_RISE_DB", "data/earlyrise.db")
-SECRET_TOKEN=os.env...EN", "earlyrise2026")
+SECRET_TOKEN = os.environ.get("EARLY_RISE_TOKEN", "earlyrise2026")
 STATIC_DIR = os.environ.get("EARLY_RISE_STATIC", os.path.join(os.path.dirname(__file__), "..", "frontend"))
-TOKEN_EXPIRE_HOURS=int(os...RS", "168"))
+TOKEN_EXPIRE_HOURS = int(os.environ.get("TOKEN_EXPIRE_HOURS", "168"))
 
 # --- Database ---
 def get_db():
@@ -834,8 +834,9 @@ try:
 except (ImportError, ModuleNotFoundError):
     _KNOWLEDGE_AVAILABLE = False
 
+
 if _KNOWLEDGE_AVAILABLE:
-        _kr = _APIRouter(prefix="/api/knowledge", tags=["knowledge"])
+    _kr = _APIRouter(prefix="/api/knowledge", tags=["knowledge"])
     _HERMES_HOME = Path("~/.hermes").expanduser()
     _REPO_ROOT = Path(_k.__file__).resolve().parent.parent.parent  # hermes-agent/
 
