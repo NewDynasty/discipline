@@ -100,9 +100,93 @@
   .bl-link:hover{background:#e8e8ed}
 
   @media(max-width:768px){
-    .sidebar{display:none}
+    .sidebar{display:none;position:fixed;top:48px;left:0;width:280px;height:calc(100vh - 48px);background:#fff;z-index:200;box-shadow:4px 0 24px rgba(0,0,0,.12)}
+    .sidebar.show{display:block}
     .content{padding:24px 22px 60px}
     .doc-title{font-size:28px}
+    .mobile-toggle{display:flex!important}
+    .nav-links{display:none!important}
+    .nav-links.show{display:flex!important;position:absolute;top:48px;left:0;right:0;background:rgba(255,255,255,.95);backdrop-filter:blur(12px);flex-direction:column;padding:12px 22px;border-bottom:1px solid #e5e5ea;gap:0;z-index:200}
+    .nav-links.show a{padding:10px 0;font-size:15px}
+  }
+
+  /* Theme toggle */
+  .theme-toggle{background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;display:flex;align-items:center;justify-content:center;transition:background .15s}
+  .theme-toggle:hover{background:#f5f5f7}
+  .theme-toggle svg{width:18px;height:18px;color:#86868b}
+
+  /* Mobile hamburger */
+  .mobile-toggle{display:none;align-items:center;justify-content:center;width:36px;height:36px;background:none;border:none;cursor:pointer;border-radius:8px}
+  .mobile-toggle:hover{background:#f5f5f7}
+  .mobile-toggle span{display:block;width:18px;height:2px;background:#1d1d1f;position:relative;transition:background .15s}
+  .mobile-toggle span::before,.mobile-toggle span::after{content:'';position:absolute;left:0;width:100%;height:2px;background:#1d1d1f;transition:transform .2s}
+  .mobile-toggle span::before{top:-5px}
+  .mobile-toggle span::after{top:5px}
+  .mobile-toggle.active span{background:transparent}
+  .mobile-toggle.active span::before{transform:rotate(45deg);top:0}
+  .mobile-toggle.active span::after{transform:rotate(-45deg);top:0}
+
+  /* Back button */
+  .back-btn{display:inline-flex;align-items:center;gap:6px;color:#0071e3;text-decoration:none;font-size:13px;font-weight:500;padding:6px 12px;border-radius:8px;transition:background .15s;margin-bottom:8px}
+  .back-btn:hover{background:#f5f5f7;text-decoration:none}
+
+  /* Dark theme */
+  [data-theme="dark"] body{background:#0a0a0f;color:#e2e8f0}
+  [data-theme="dark"] .nav{background:rgba(10,10,15,.9);border-bottom-color:#1e293b}
+  [data-theme="dark"] .nav-brand{color:#e2e8f0}
+  [data-theme="dark"] .nav-brand span{color:#f59e0b}
+  [data-theme="dark"] .nav-links a{color:#94a3b8}
+  [data-theme="dark"] .nav-links a:hover{color:#e2e8f0}
+  [data-theme="dark"] .nav-links a.active{color:#f59e0b}
+  [data-theme="dark"] .sidebar{background:#0f172a;border-right-color:#1e293b}
+  [data-theme="dark"] .sb-item{color:#e2e8f0}
+  [data-theme="dark"] .sb-item:hover{background:#1e293b}
+  [data-theme="dark"] .sb-item.active{background:#f59e0b;color:#0a0a0f}
+  [data-theme="dark"] .sb-label{color:#64748b}
+  [data-theme="dark"] .sb-folder{color:#94a3b8}
+  [data-theme="dark"] .sb-count{color:#64748b}
+  [data-theme="dark"] .search-box input{background:#1e293b;border-color:#334155;color:#e2e8f0}
+  [data-theme="dark"] .search-box input:focus{border-color:#f59e0b}
+  [data-theme="dark"] .search-box svg{color:#64748b}
+  [data-theme="dark"] .search-results{background:#1e293b}
+  [data-theme="dark"] .sr-item{color:#e2e8f0;border-bottom-color:#334155}
+  [data-theme="dark"] .sr-item:hover{background:#334155}
+  [data-theme="dark"] .sr-folder{color:#f59e0b}
+  [data-theme="dark"] .breadcrumb{color:#64748b}
+  [data-theme="dark"] .breadcrumb a{color:#f59e0b}
+  [data-theme="dark"] .doc-title{color:#e2e8f0}
+  [data-theme="dark"] .doc-meta{color:#64748b;border-bottom-color:#1e293b}
+  [data-theme="dark"] .md h1,.md h2,.md h3,.md h4{color:#e2e8f0}
+  [data-theme="dark"] .md h2{border-top-color:#1e293b}
+  [data-theme="dark"] .md p,.md ul,.md ol,.md li{color:#cbd5e1}
+  [data-theme="dark"] .md code{background:#1e293b;color:#e2e8f0}
+  [data-theme="dark"] .md pre{background:#1e293b}
+  [data-theme="dark"] .md blockquote{border-left-color:#f59e0b;color:#94a3b8}
+  [data-theme="dark"] .md a{color:#f59e0b}
+  [data-theme="dark"] .md strong{color:#f1f5f9}
+  [data-theme="dark"] .md th{background:#1e293b;border-bottom-color:#334155;color:#e2e8f0}
+  [data-theme="dark"] .md td{border-bottom-color:#1e293b}
+  [data-theme="dark"] .md table{border-collapse:collapse}
+  [data-theme="dark"] .backlinks{border-top-color:#1e293b}
+  [data-theme="dark"] .bl-link{background:#1e293b;color:#e2e8f0}
+  [data-theme="dark"] .bl-link:hover{background:#334155}
+  [data-theme="dark"] .empty{color:#64748b}
+  [data-theme="dark"] .tag-compare{background:#1e3a5f;color:#60a5fa}
+  [data-theme="dark"] .tag-debug{background:#422006;color:#fbbf24}
+  [data-theme="dark"] .tag-pitfall{background:#450a0a;color:#f87171}
+  [data-theme="dark"] .tag-tech{background:#052e16;color:#4ade80}
+  [data-theme="dark"] .tag-default{background:#1e293b;color:#94a3b8}
+  [data-theme="dark"] .theme-toggle:hover{background:#1e293b}
+  [data-theme="dark"] .theme-toggle svg{color:#94a3b8}
+  [data-theme="dark"] .mobile-toggle:hover{background:#1e293b}
+  [data-theme="dark"] .mobile-toggle span{background:#e2e8f0}
+  [data-theme="dark"] .mobile-toggle span::before,.mobile-toggle span::after{background:#e2e8f0}
+  [data-theme="dark"] .back-btn{color:#f59e0b}
+  [data-theme="dark"] .back-btn:hover{background:#1e293b}
+  @media(max-width:768px){
+    [data-theme="dark"] .sidebar{background:#0f172a}
+    [data-theme="dark"] .nav-links.show{background:rgba(15,23,42,.95);border-bottom-color:#1e293b}
+    [data-theme="dark"] .nav-links.show a{color:#94a3b8}
   }
 </style>
 </head>
@@ -110,11 +194,17 @@
 
 <nav class="nav">
   <div class="nav-inner">
+    <button class="mobile-toggle" id="mobile-toggle" aria-label="菜单"><span></span></button>
     <a class="nav-brand" href="/portal">⚡ Command Center <span>› 文档</span></a>
-    <div class="nav-links">
+    <div class="nav-links" id="nav-links">
       <a href="/portal">总览</a>
       <a href="/docs/" class="active">文档</a>
+      <a href="/graph">图谱</a>
     </div>
+    <button class="theme-toggle" id="theme-toggle" title="切换主题">
+      <svg id="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      <svg id="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+    </button>
   </div>
 </nav>
 
@@ -215,8 +305,9 @@ async function loadDoc(path){
   }
 
   document.getElementById('doc-content').innerHTML=`
+    <a class="back-btn" href="/docs/" onclick="event.preventDefault();loadFirstDoc();document.querySelectorAll('.sb-item').forEach(x=>x.classList.remove('active'));if(document.querySelector('.sb-item'))document.querySelector('.sb-item').classList.add('active')">← 返回文档列表</a>
     <div class="breadcrumb">
-      <a href="/portal">Command Center</a> › <a href="/docs/">文档</a> › <a href="#">${folder}</a> › ${name}
+      <a href="/portal">Command Center</a> › <a href="/docs/">文档</a> › <a href="#${folder}">${folder}</a> › ${name}
     </div>
     <div class="doc-title">${formatTitle(doc.title)}</div>
     <div class="doc-meta">
@@ -308,13 +399,38 @@ function loadFirstDoc(){
 }
 
 document.addEventListener('DOMContentLoaded',async()=>{
+  // Theme init (shared via 'cc-theme' with portal)
+  const saved=localStorage.getItem('cc-theme')||localStorage.getItem('docs-theme')||'light';
+  document.documentElement.setAttribute('data-theme',saved);
+  updateThemeIcon(saved);
+  localStorage.setItem('cc-theme',saved);
+  localStorage.removeItem('docs-theme');
+
+  document.getElementById('theme-toggle').onclick=()=>{
+    const cur=document.documentElement.getAttribute('data-theme');
+    const next=cur==='dark'?'light':'dark';
+    document.documentElement.setAttribute('data-theme',next);
+    localStorage.setItem('cc-theme',next);
+    updateThemeIcon(next);
+  };
+
+  document.getElementById('mobile-toggle').onclick=function(){
+    this.classList.toggle('active');
+    document.getElementById('sidebar').classList.toggle('show');
+    document.getElementById('nav-links').classList.toggle('show');
+  };
+
   await loadTree();
   handleHash();
-  // If no hash, auto-load first doc
   if(!window.location.hash.slice(1)){
     loadFirstDoc();
   }
 });
+
+function updateThemeIcon(theme){
+  document.getElementById('theme-icon-sun').style.display=theme==='dark'?'none':'block';
+  document.getElementById('theme-icon-moon').style.display=theme==='dark'?'block':'none';
+}
 window.addEventListener('hashchange',handleHash);
 </script>
 </body>

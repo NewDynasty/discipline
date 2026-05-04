@@ -67,6 +67,94 @@
     border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Mobile toggle button for controls */
+  .controls-toggle {
+    display: none;
+    position: fixed; top: 56px; right: 12px; z-index: 101;
+    background: rgba(17,24,39,0.95); border: 1px solid #1e293b;
+    color: #f59e0b; border-radius: 8px; padding: 6px 10px;
+    font-size: 16px; cursor: pointer; line-height: 1;
+  }
+
+  @media(max-width:768px){
+    .topbar{padding:0 12px;gap:10px}
+    .topbar a,.topbar .current{font-size:12px}
+
+    /* Controls: collapsible panel */
+    .controls-toggle{display:block}
+    .controls{
+      top:52px; right:8px; left:8px; width:auto;
+      display:none;
+      max-height:calc(100vh - 64px); overflow-y:auto;
+    }
+    .controls.open{display:block}
+
+    .controls input[type=text]{font-size:14px;padding:10px 12px}
+    .legend span{font-size:12px;padding:3px 10px}
+    .folder-btn{font-size:12px;padding:5px 12px}
+
+    /* Tooltip clamp within viewport */
+    .tooltip{max-width:200px;font-size:13px}
+
+    /* Loading text */
+    .loading{font-size:13px}
+
+    /* Ensure graph fills all space */
+    #graph{width:100vw;height:100vh}
+  }
+
+  /* ========== Light theme ========== */
+  [data-theme="light"] body { background: #ffffff; color: #1d1d1f; }
+
+  [data-theme="light"] .topbar {
+    background: rgba(255,255,255,0.92);
+    border-bottom-color: #e5e5ea;
+  }
+  [data-theme="light"] .topbar a { color: #86868b; }
+  [data-theme="light"] .topbar a:hover { color: #0071e3; }
+  [data-theme="light"] .topbar .sep { color: #d1d1d6; }
+  [data-theme="light"] .topbar .current { color: #0071e3; }
+
+  [data-theme="light"] .controls {
+    background: rgba(245,245,247,0.96);
+    border-color: #e5e5ea;
+  }
+  [data-theme="light"] .controls input[type=text] {
+    background: #ffffff; border-color: #e5e5ea; color: #1d1d1f;
+  }
+  [data-theme="light"] .controls input:focus { border-color: #0071e3; }
+  [data-theme="light"] .controls .stat { color: #86868b; }
+  [data-theme="light"] .legend span { background: #f5f5f7; }
+  [data-theme="light"] .folder-btn { border-color: #e5e5ea; color: #86868b; }
+  [data-theme="light"] .folder-btn:hover,
+  [data-theme="light"] .folder-btn.active { border-color: #0071e3; color: #0071e3; }
+
+  [data-theme="light"] #graph { background: #f8fafc; }
+
+  [data-theme="light"] .tooltip {
+    background: rgba(245,245,247,0.96); border-color: #e5e5ea;
+  }
+  [data-theme="light"] .tooltip .tt-name { color: #0071e3; }
+  [data-theme="light"] .tooltip .tt-folder { color: #86868b; }
+  [data-theme="light"] .tooltip .tt-tags { color: #6e6e73; }
+
+  [data-theme="light"] .loading { color: #86868b; }
+  [data-theme="light"] .loading .spinner { border-color: #e5e5ea; border-top-color: #0071e3; }
+
+  [data-theme="light"] .controls-toggle {
+    background: rgba(245,245,247,0.96); border-color: #e5e5ea; color: #0071e3;
+  }
+
+  /* Theme toggle button */
+  .theme-toggle {
+    background: none; border: none; cursor: pointer; padding: 4px;
+    color: #94a3b8; display: flex; align-items: center; justify-content: center;
+    transition: color 0.2s; margin-left: auto; border-radius: 6px;
+  }
+  .theme-toggle:hover { color: #f59e0b; }
+  [data-theme="light"] .theme-toggle { color: #86868b; }
+  [data-theme="light"] .theme-toggle:hover { color: #0071e3; }
 </style>
 </head>
 <body>
@@ -77,13 +165,29 @@
   <a href="/docs">文档</a>
   <span class="sep">›</span>
   <span class="current">知识图谱</span>
+  <button class="theme-toggle" id="themeToggle" title="切换主题">
+    <svg id="themeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="5"/>
+      <line x1="12" y1="1" x2="12" y2="3"/>
+      <line x1="12" y1="21" x2="12" y2="23"/>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+      <line x1="1" y1="12" x2="3" y2="12"/>
+      <line x1="21" y1="12" x2="23" y2="12"/>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+    </svg>
+  </button>
 </div>
 
-<div class="controls">
+<button class="controls-toggle" id="controlsToggle" onclick="document.getElementById('controlsPanel').classList.toggle('open')">☰</button>
+
+<div class="controls" id="controlsPanel">
   <input type="text" id="search" placeholder="搜索节点...">
   <div class="stat" id="stats">加载中...</div>
   <div id="folderFilter"></div>
   <div class="legend" id="legend"></div>
+  <div class="legend" id="edgeLegend" style="margin-top:8px;"></div>
 </div>
 
 <div class="tooltip" id="tooltip">
@@ -115,6 +219,41 @@ const FOLDER_COLORS = {
 let network, nodes, edges, allData;
 const activeFolders = new Set();
 
+/* ========== Theme logic ========== */
+const SUN_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+const MOON_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+
+function isLightTheme() {
+  return document.documentElement.getAttribute('data-theme') === 'light';
+}
+
+function applyTheme(theme) {
+  if (theme === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    document.getElementById('themeIcon').outerHTML = MOON_SVG.replace('<svg ', '<svg id="themeIcon" ');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    document.getElementById('themeIcon').outerHTML = SUN_SVG.replace('<svg ', '<svg id="themeIcon" ');
+  }
+  localStorage.setItem('cc-theme', theme);
+  // Update vis-network if already rendered
+  if (network) {
+    const bgColor = isLightTheme() ? '#f8fafc' : '#0a0a0f';
+    const container = document.getElementById('graph');
+    container.style.backgroundColor = bgColor;
+    // Re-render to update node font & edge colors
+    applyFilters();
+  }
+}
+
+// Restore saved theme before first paint
+(function() {
+  const saved = localStorage.getItem('cc-theme');
+  if (saved === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+  }
+})();
+
 async function init() {
   try {
     const resp = await fetch("/api/docs/graph");
@@ -126,6 +265,11 @@ async function init() {
 
     buildFolderFilter();
     buildLegend();
+    // Sync toggle icon & graph background with restored theme
+    if (isLightTheme()) {
+      document.getElementById('themeIcon').outerHTML = MOON_SVG.replace('<svg ', '<svg id="themeIcon" ');
+      document.getElementById('graph').style.backgroundColor = '#f8fafc';
+    }
     renderGraph(allData);
   } catch (e) {
     document.getElementById("loading").innerHTML = `😕 加载失败: ${e.message}`;
@@ -158,6 +302,20 @@ function buildLegend() {
       el.innerHTML += `<span style="color:${color};border-color:${color}">${folder}</span>`;
     }
   }
+  // Edge type legend
+  const edgeEl = document.getElementById("edgeLegend");
+  const edgeTypes = [
+    { type: "link", label: "链接", color: "#64748b" },
+    { type: "tag", label: "标签", color: "#3b82f6" },
+    { type: "keyword", label: "关键词", color: "#10b981" },
+    { type: "folder", label: "同目录", color: "#475569" },
+  ];
+  const present = new Set(allData.edges.map(e => e.type));
+  for (const et of edgeTypes) {
+    if (present.has(et.type)) {
+      edgeEl.innerHTML += `<span style="color:${et.color};border-color:${et.color}">━ ${et.label}</span>`;
+    }
+  }
 }
 
 function getFilteredData() {
@@ -182,29 +340,47 @@ function applyFilters() {
 }
 
 function renderGraph(data) {
+  const light = isLightTheme();
+  const nodeFontColor = light ? '#1d1d1f' : '#e2e8f0';
+  const highlightColor = light ? '#0071e3' : '#f59e0b';
+
   const visNodes = new vis.DataSet(data.nodes.map(n => ({
     id: n.id,
     label: n.label,
     color: {
       background: FOLDER_COLORS[n.folder] || "#64748b",
       border: FOLDER_COLORS[n.folder] || "#64748b",
-      highlight: { background: "#f59e0b", border: "#f59e0b" },
-      hover: { background: "#f59e0b", border: "#f59e0b" }
+      highlight: { background: highlightColor, border: highlightColor },
+      hover: { background: highlightColor, border: highlightColor }
     },
-    font: { color: "#e2e8f0", size: 11, face: "Inter, sans-serif" },
+    font: { color: nodeFontColor, size: 11, face: "Inter, sans-serif" },
     size: n.size,
     borderWidth: 1,
     shape: "dot",
     title: `${n.label} (${n.folder})`
   })));
 
-  const visEdges = new vis.DataSet(data.edges.map(e => ({
-    from: e.from,
-    to: e.to,
-    color: { color: "rgba(100,116,139,0.15)", highlight: "#f59e0b", hover: "#f59e0b" },
-    width: 1,
-    smooth: { type: "continuous" }
-  })));
+  const EDGE_TYPE_COLORS = {
+    link:    { color: light ? "rgba(100,116,139,0.40)" : "rgba(100,116,139,0.30)", highlight: highlightColor, hover: highlightColor },
+    tag:     { color: light ? "rgba(59,130,246,0.40)"  : "rgba(59,130,246,0.30)",  highlight: "#3b82f6", hover: "#3b82f6" },
+    keyword: { color: light ? "rgba(16,185,129,0.35)"  : "rgba(16,185,129,0.25)",  highlight: "#10b981", hover: "#10b981" },
+    folder:  { color: light ? "rgba(100,116,139,0.12)" : "rgba(100,116,139,0.08)", highlight: "#64748b", hover: "#64748b" },
+  };
+
+  const visEdges = new vis.DataSet(data.edges.map(e => {
+    const ec = EDGE_TYPE_COLORS[e.type] || EDGE_TYPE_COLORS.link;
+    return {
+      from: e.from,
+      to: e.to,
+      color: ec,
+      width: e.type === "folder" ? 0.5 : 1,
+      smooth: { type: "continuous" },
+      title: e.type === "tag" ? `tag: ${e.tag}` :
+             e.type === "keyword" ? `keywords: ${(e.words||[]).join(", ")}` :
+             e.type === "folder" ? `folder: ${e.folder}` :
+             "link",
+    };
+  }));
 
   const container = document.getElementById("graph");
   if (network) {
@@ -250,8 +426,15 @@ function renderGraph(data) {
     tooltip.querySelector(".tt-folder").textContent = n.folder;
     tooltip.querySelector(".tt-tags").textContent = n.tags.length ? "#" + n.tags.join(" #") : "";
     tooltip.style.display = "block";
-    tooltip.style.left = (params.event.pageX + 12) + "px";
-    tooltip.style.top = (params.event.pageY + 12) + "px";
+    // Clamp tooltip within viewport
+    const ttW = tooltip.offsetWidth || 200;
+    const ttH = tooltip.offsetHeight || 60;
+    let tx = params.event.pageX + 12;
+    let ty = params.event.pageY + 12;
+    if (tx + ttW > window.innerWidth - 8) tx = params.event.pageX - ttW - 8;
+    if (ty + ttH > window.innerHeight - 8) ty = params.event.pageY - ttH - 8;
+    tooltip.style.left = Math.max(8, tx) + "px";
+    tooltip.style.top = Math.max(8, ty) + "px";
   });
   network.on("blurNode", () => { tooltip.style.display = "none"; });
 }
@@ -261,6 +444,11 @@ let searchTimer;
 document.getElementById("search").addEventListener("input", () => {
   clearTimeout(searchTimer);
   searchTimer = setTimeout(applyFilters, 250);
+});
+
+// Theme toggle handler
+document.getElementById('themeToggle').addEventListener('click', () => {
+  applyTheme(isLightTheme() ? 'dark' : 'light');
 });
 
 init();
