@@ -113,6 +113,11 @@
     #auth-modal > div{width:90vw;max-width:340px;padding:28px 24px}
 
     footer{padding:36px 22px}
+
+    /* Global search mobile */
+    .global-search{margin:14px 0 0}
+    .search-results{max-height:50vh}
+    .sr-title{font-size:16px}
   }
 
   /* Hamburger: hidden on desktop */
@@ -178,6 +183,20 @@
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 .toast.error{background:#e8453c;}
 .toast.ok{background:#34c759;}
+.global-search{position:relative;max-width:520px;margin:18px auto 0;}
+.global-search input{width:100%;padding:10px 16px;border-radius:10px;border:1px solid rgba(0,0,0,.1);font-size:15px;background:rgba(255,255,255,.7);outline:none;transition:border .2s;}
+.global-search input:focus{border-color:#0071e3;}
+[data-theme="dark"] .global-search input{background:rgba(255,255,255,.08);color:#e2e8f0;border-color:rgba(255,255,255,.12);}
+.search-results{position:absolute;top:100%;left:0;right:0;background:#fff;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.12);max-height:320px;overflow-y:auto;display:none;z-index:100;margin-top:4px;}
+.search-results.open{display:block;}
+.sr-item{padding:10px 16px;border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer;text-decoration:none;color:inherit;display:block;}
+.sr-item:hover{background:rgba(0,113,227,.06);}
+.sr-item:last-child{border:none;}
+.sr-folder{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.5px;}
+.sr-title{font-size:14px;font-weight:500;margin-top:2px;}
+[data-theme="dark"] .search-results{background:#1e1e2e;box-shadow:0 8px 30px rgba(0,0,0,.4);}
+[data-theme="dark"] .sr-item:hover{background:rgba(0,113,227,.15);}
+[data-theme="dark"] .sr-folder{color:#666;}
 </style>
 </head>
 <body>
@@ -230,6 +249,10 @@
 <div class="hero">
   <h1>Command Center</h1>
   <div class="hero-sub">项目、服务、研究，一目了然。</div>
+  <div class="global-search">
+    <input type="text" id="global-search-input" placeholder="搜索笔记、研究、看板..." autocomplete="off">
+    <div class="search-results" id="search-results"></div>
+  </div>
 </div>
 
 <div class="status" id="status-bar"></div>
@@ -600,6 +623,33 @@ function showToast(msg,type){
   clearTimeout(t._timer);
   t._timer=setTimeout(()=>t.className='toast',3000);
 }
+
+// --- Global Search ---
+let _searchTimer;
+document.getElementById('global-search-input').addEventListener('input',function(e){
+  clearTimeout(_searchTimer);
+  const q=e.target.value.trim();
+  const box=document.getElementById('search-results');
+  if(!q||q.length<2){box.className='search-results';box.innerHTML='';return;}
+  _searchTimer=setTimeout(async()=>{
+    try{
+      const r=await fetch('/api/docs/search?q='+encodeURIComponent(q));
+      const data=await r.json();
+      if(!data.length){box.innerHTML='<div class="sr-item"><div class="sr-title" style="color:#888">无结果</div></div>';box.className='search-results open';return;}
+      box.innerHTML=data.slice(0,10).map(d=>
+        '<a class="sr-item" href="/docs/'+d.path+'">'+
+        '<div class="sr-folder">'+d.folder+'</div>'+
+        '<div class="sr-title">'+d.title+'</div></a>'
+      ).join('');
+      box.className='search-results open';
+    }catch(e){console.error(e);}
+  },300);
+});
+// Close search on outside click
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.global-search'))
+    document.getElementById('search-results').className='search-results';
+});
 </script>
 </body>
 </html>
