@@ -276,34 +276,10 @@
 const API = '/api/knowledge';
 let currentItems = [];
 
-// Theme (shared with portal via localStorage cc-theme)
-function initTheme(){
-  let theme = localStorage.getItem('cc-theme') || 'light';
-  document.documentElement.setAttribute('data-theme', theme);
-  updateThemeIcon(theme);
-}
-function updateThemeIcon(theme){
-  document.getElementById('theme-icon-sun').style.display = theme === 'dark' ? 'none' : 'block';
-  document.getElementById('theme-icon-moon').style.display = theme === 'dark' ? 'block' : 'none';
-}
-function toggleTheme(){
-  const cur = document.documentElement.getAttribute('data-theme') || 'light';
-  const next = cur === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('cc-theme', next);
-  updateThemeIcon(next);
-}
-document.getElementById('theme-toggle').onclick = toggleTheme;
-initTheme();
+// Theme handled by shared-nav.js
+
 function tick(){var d=new Date();document.getElementById('clock').textContent=d.toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false})}
 tick();setInterval(tick,1000);
-
-// Listen for storage changes (if portal toggles theme in another tab)
-window.addEventListener('storage', function(e) {
-  if (e.key === 'cc-theme') {
-    initTheme();
-  }
-});
 
 // Tabs
 document.querySelectorAll('.tab-btn').forEach(function(btn) {

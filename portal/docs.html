@@ -390,14 +390,6 @@ document.addEventListener('DOMContentLoaded',async()=>{
   localStorage.setItem('cc-theme',saved);
   localStorage.removeItem('docs-theme');
 
-  document.getElementById('theme-toggle').onclick=()=>{
-    const cur=document.documentElement.getAttribute('data-theme');
-    const next=cur==='dark'?'light':'dark';
-    document.documentElement.setAttribute('data-theme',next);
-    localStorage.setItem('cc-theme',next);
-    updateThemeIcon(next);
-  };
-
   document.getElementById('mobile-toggle').onclick=function(){
     this.classList.toggle('active');
     document.getElementById('sidebar').classList.toggle('show');
@@ -411,10 +403,6 @@ document.addEventListener('DOMContentLoaded',async()=>{
   }
 });
 
-function updateThemeIcon(theme){
-  document.getElementById('theme-icon-sun').style.display=theme==='dark'?'none':'block';
-  document.getElementById('theme-icon-moon').style.display=theme==='dark'?'block':'none';
-}
 window.addEventListener('hashchange',handleHash);
 </script>
 </body>

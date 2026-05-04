@@ -425,10 +425,7 @@ document.getElementById("search").addEventListener("input", () => {
   searchTimer = setTimeout(applyFilters, 250);
 });
 
-// Theme toggle handler
-document.getElementById('themeToggle').addEventListener('click', () => {
-  applyTheme(isLightTheme() ? 'dark' : 'light');
-});
+// Theme handled by shared-nav.js
 
 init();
 </script>
