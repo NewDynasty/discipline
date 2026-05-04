@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Graph — Command Center</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0a0f; color: #e2e8f0; font-family: Inter, -apple-system, sans-serif; overflow: hidden; height: 100vh; }
+
+  /* Top bar */
+  .topbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    height: 48px; background: rgba(10,10,15,0.9); backdrop-filter: blur(12px);
+    border-bottom: 1px solid #1e293b;
+    display: flex; align-items: center; padding: 0 20px; gap: 16px;
+  }
+  .topbar a { color: #94a3b8; text-decoration: none; font-size: 13px; font-weight: 500; }
+  .topbar a:hover { color: #f59e0b; }
+  .topbar .sep { color: #334155; }
+  .topbar .current { color: #f59e0b; }
+
+  /* Controls */
+  .controls {
+    position: fixed; top: 56px; right: 16px; z-index: 100;
+    background: rgba(17,24,39,0.95); border: 1px solid #1e293b; border-radius: 12px;
+    padding: 12px; width: 240px;
+  }
+  .controls input[type=text] {
+    width: 100%; background: #0f172a; border: 1px solid #1e293b; color: #e2e8f0;
+    padding: 8px 12px; border-radius: 8px; font-size: 13px; outline: none;
+  }
+  .controls input:focus { border-color: #f59e0b; }
+  .controls .stat { font-size: 11px; color: #64748b; margin-top: 8px; }
+  .legend { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .legend span { font-size: 11px; padding: 2px 8px; border-radius: 4px; background: #1e293b; }
+  .folder-btn {
+    background: none; border: 1px solid #1e293b; color: #94a3b8; padding: 4px 10px;
+    border-radius: 6px; font-size: 11px; cursor: pointer; margin-top: 8px; margin-right: 4px;
+    transition: all 0.15s;
+  }
+  .folder-btn:hover, .folder-btn.active { border-color: #f59e0b; color: #f59e0b; }
+
+  /* Graph container */
+  #graph { width: 100vw; height: 100vh; }
+
+  /* Tooltip */
+  .tooltip {
+    position: fixed; z-index: 200; pointer-events: none;
+    background: rgba(17,24,39,0.95); border: 1px solid #334155; border-radius: 8px;
+    padding: 8px 12px; font-size: 12px; display: none; max-width: 280px;
+    backdrop-filter: blur(8px);
+  }
+  .tooltip .tt-name { font-weight: 600; color: #f59e0b; margin-bottom: 2px; }
+  .tooltip .tt-folder { color: #64748b; font-size: 11px; }
+  .tooltip .tt-tags { color: #94a3b8; font-size: 11px; margin-top: 2px; }
+
+  /* Loading */
+  .loading {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    color: #64748b; font-size: 14px; z-index: 50;
+  }
+  .loading .spinner {
+    width: 32px; height: 32px; border: 2px solid #1e293b; border-top-color: #f59e0b;
+    border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="/portal">⚡ Command Center</a>
+  <span class="sep">›</span>
+  <a href="/docs">文档</a>
+  <span class="sep">›</span>
+  <span class="current">知识图谱</span>
+</div>
+
+<div class="controls">
+  <input type="text" id="search" placeholder="搜索节点...">
+  <div class="stat" id="stats">加载中...</div>
+  <div id="folderFilter"></div>
+  <div class="legend" id="legend"></div>
+</div>
+
+<div class="tooltip" id="tooltip">
+  <div class="tt-name"></div>
+  <div class="tt-folder"></div>
+  <div class="tt-tags"></div>
+</div>
+
+<div class="loading" id="loading">
+  <div class="spinner"></div>
+  构建知识图谱...
+</div>
+
+<div id="graph"></div>
+
+<script src="https://unpkg.com/vis-network@9.1.9/standalone/umd/vis-network.min.js"></script>
+<script>
+const FOLDER_COLORS = {
+  Bookmarks: "#f59e0b",
+  Kanban: "#3b82f6",
+  Notes: "#10b981",
+  People: "#ec4899",
+  Research: "#8b5cf6",
+  TaskLog: "#64748b",
+  Workspace: "#06b6d4",
+  PlanPipeline: "#f97316"
+};
+
+let network, nodes, edges, allData;
+const activeFolders = new Set();
+
+async function init() {
+  try {
+    const resp = await fetch("/api/docs/graph");
+    allData = await resp.json();
+
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("stats").textContent =
+      `${allData.nodes.length} 节点 · ${allData.edges.length} 连接`;
+
+    buildFolderFilter();
+    buildLegend();
+    renderGraph(allData);
+  } catch (e) {
+    document.getElementById("loading").innerHTML = `😕 加载失败: ${e.message}`;
+  }
+}
+
+function buildFolderFilter() {
+  const folders = [...new Set(allData.nodes.map(n => n.folder))].sort();
+  const container = document.getElementById("folderFilter");
+  folders.forEach(f => {
+    activeFolders.add(f);
+    const btn = document.createElement("button");
+    btn.className = "folder-btn active";
+    btn.textContent = f;
+    btn.style.borderColor = FOLDER_COLORS[f] || "#64748b";
+    btn.style.color = FOLDER_COLORS[f] || "#64748b";
+    btn.onclick = () => {
+      if (activeFolders.has(f)) { activeFolders.delete(f); btn.classList.remove("active"); }
+      else { activeFolders.add(f); btn.classList.add("active"); }
+      applyFilters();
+    };
+    container.appendChild(btn);
+  });
+}
+
+function buildLegend() {
+  const el = document.getElementById("legend");
+  for (const [folder, color] of Object.entries(FOLDER_COLORS)) {
+    if (allData.nodes.some(n => n.folder === folder)) {
+      el.innerHTML += `<span style="color:${color};border-color:${color}">${folder}</span>`;
+    }
+  }
+}
+
+function getFilteredData() {
+  const query = document.getElementById("search").value.toLowerCase();
+  let filteredNodes = allData.nodes.filter(n => activeFolders.has(n.folder));
+  if (query) {
+    filteredNodes = filteredNodes.filter(n =>
+      n.label.toLowerCase().includes(query) ||
+      n.tags.some(t => t.toLowerCase().includes(query))
+    );
+  }
+  const nodeIds = new Set(filteredNodes.map(n => n.id));
+  const filteredEdges = allData.edges.filter(e => nodeIds.has(e.from) && nodeIds.has(e.to));
+  return { nodes: filteredNodes, edges: filteredEdges };
+}
+
+function applyFilters() {
+  const data = getFilteredData();
+  document.getElementById("stats").textContent =
+    `${data.nodes.length} 节点 · ${data.edges.length} 连接`;
+  renderGraph(data);
+}
+
+function renderGraph(data) {
+  const visNodes = new vis.DataSet(data.nodes.map(n => ({
+    id: n.id,
+    label: n.label,
+    color: {
+      background: FOLDER_COLORS[n.folder] || "#64748b",
+      border: FOLDER_COLORS[n.folder] || "#64748b",
+      highlight: { background: "#f59e0b", border: "#f59e0b" },
+      hover: { background: "#f59e0b", border: "#f59e0b" }
+    },
+    font: { color: "#e2e8f0", size: 11, face: "Inter, sans-serif" },
+    size: n.size,
+    borderWidth: 1,
+    shape: "dot",
+    title: `${n.label} (${n.folder})`
+  })));
+
+  const visEdges = new vis.DataSet(data.edges.map(e => ({
+    from: e.from,
+    to: e.to,
+    color: { color: "rgba(100,116,139,0.15)", highlight: "#f59e0b", hover: "#f59e0b" },
+    width: 1,
+    smooth: { type: "continuous" }
+  })));
+
+  const container = document.getElementById("graph");
+  if (network) {
+    network.setData({ nodes: visNodes, edges: visEdges });
+    return;
+  }
+
+  const options = {
+    physics: {
+      forceAtlas2Based: { gravitationalConstant: -60, centralGravity: 0.01, springLength: 120, springConstant: 0.06 },
+      maxVelocity: 50,
+      solver: "forceAtlas2Based",
+      timestep: 0.35,
+      stabilization: { iterations: 150 }
+    },
+    interaction: {
+      hover: true,
+      tooltipDelay: 0,
+      zoomView: true,
+      dragView: true,
+      navigationButtons: false
+    },
+    nodes: { scaling: { min: 8, max: 40 } },
+    edges: { arrowStrikethrough: false }
+  };
+
+  network = new vis.Network(container, { nodes: visNodes, edges: visEdges }, options);
+
+  // Click → open doc
+  network.on("doubleClick", params => {
+    if (params.nodes.length > 0) {
+      const nodeId = params.nodes[0];
+      window.open("/docs#" + nodeId.replace(/\.md$/, ""), "_blank");
+    }
+  });
+
+  // Hover tooltip
+  const tooltip = document.getElementById("tooltip");
+  network.on("hoverNode", params => {
+    const n = data.nodes.find(x => x.id === params.node);
+    if (!n) return;
+    tooltip.querySelector(".tt-name").textContent = n.label;
+    tooltip.querySelector(".tt-folder").textContent = n.folder;
+    tooltip.querySelector(".tt-tags").textContent = n.tags.length ? "#" + n.tags.join(" #") : "";
+    tooltip.style.display = "block";
+    tooltip.style.left = (params.event.pageX + 12) + "px";
+    tooltip.style.top = (params.event.pageY + 12) + "px";
+  });
+  network.on("blurNode", () => { tooltip.style.display = "none"; });
+}
+
+// Search debounce
+let searchTimer;
+document.getElementById("search").addEventListener("input", () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(applyFilters, 250);
+});
+
+init();
+</script>
+</body>
+</html>

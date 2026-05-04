@@ -414,7 +414,8 @@ def portal_research():
                         tags = [t.strip().strip('"\'') for t in tag_match.group(1).split(",") if t.strip()]
         except Exception:
             pass
-        notes.append({"title": title, "tags": tags, "mtime": mtime})
+        notes.append({"title": title, "tags": tags, "mtime": mtime,
+                       "url": f"/docs/Research/{os.path.basename(f)}"})
     
     # Sort by mtime desc, take 10
     notes.sort(key=lambda x: x["mtime"], reverse=True)
@@ -441,7 +442,8 @@ def portal_kanban():
                         count += 1
         except Exception:
             pass
-        boards.append({"name": name, "count": f"{count} 任务" if count else "空"})
+        boards.append({"name": name, "count": f"{count} 任务" if count else "空",
+                        "url": f"/docs/Kanban/{os.path.basename(f)}"})
     return boards
 
 @app.get("/api/portal/earlyrise")
@@ -662,6 +664,19 @@ def serve_docs(full_path: str = ""):
     if os.path.exists(html_path):
         return FileResponse(html_path)
     return JSONResponse({"error": "Docs UI not found"}, status_code=404)
+
+
+# --- Knowledge Graph (standalone module) ---
+from backend.graph import router as graph_router
+app.include_router(graph_router)
+
+@app.get("/graph")
+@app.get("/graph/")
+def serve_graph():
+    html_path = os.path.join(PORTAL_DIR, "graph.html")
+    if os.path.exists(html_path):
+        return FileResponse(html_path)
+    return JSONResponse({"error": "Graph UI not found"}, status_code=404)
 
 
 if __name__ == "__main__":
