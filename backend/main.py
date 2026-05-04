@@ -680,6 +680,86 @@ def serve_graph():
     return JSONResponse({"error": "Graph UI not found"}, status_code=404)
 
 
+# --- Command Actions API (requires auth) ---
+import subprocess
+
+# Whitelisted services that can be managed
+MANAGED_SERVICES = {
+    "discipline": {"type": "launchctl", "plist": "ai.hermes.discipline", "port": 8899},
+    "hermes-gateway": {"type": "launchctl", "plist": "ai.hermes.gateway", "port": None},
+}
+
+@app.post("/api/actions/restart-service")
+def action_restart_service(request: Request, body: dict = None):
+    """Restart a managed service. Body: {"service": "discipline"}"""
+    verify_token(request)
+    body = body or {}
+    service = body.get("service", "")
+    if service not in MANAGED_SERVICES:
+        return JSONResponse({"error": f"Unknown service: {service}"}, status_code=400)
+    
+    svc = MANAGED_SERVICES[service]
+    if svc["type"] == "launchctl":
+        uid = os.getuid()
+        try:
+            result = subprocess.run(
+                ["launchctl", "kickstart", "-k", f"gui/{uid}/{svc['plist']}"],
+                capture_output=True, text=True, timeout=15
+            )
+            if result.returncode == 0:
+                return {"ok": True, "message": f"{service} restarted"}
+            else:
+                return JSONResponse({"error": result.stderr.strip()}, status_code=500)
+        except Exception as e:
+            return JSONResponse({"error": str(e)}, status_code=500)
+    return JSONResponse({"error": "Unsupported service type"}, status_code=400)
+
+@app.post("/api/actions/create-note")
+def action_create_note(request: Request, body: dict = None):
+    """Create an Obsidian note. Body: {"path": "Notes/filename.md", "content": "..."}"""
+    verify_token(request)
+    body = body or {}
+    rel_path = body.get("path", "").strip("/")
+    content = body.get("content", "")
+    
+    if not rel_path:
+        return JSONResponse({"error": "path is required"}, status_code=400)
+    
+    vault = os.environ.get("OBSIDIAN_VAULT", os.path.expanduser("~/Documents/Obsidian Vault"))
+    full_path = os.path.normpath(os.path.join(vault, rel_path))
+    
+    # Security: ensure path stays within vault
+    if not full_path.startswith(os.path.normpath(vault)):
+        return JSONResponse({"error": "Path outside vault"}, status_code=403)
+    
+    if os.path.exists(full_path):
+        return JSONResponse({"error": "File already exists"}, status_code=409)
+    
+    try:
+        os.makedirs(os.path.dirname(full_path), exist_ok=True)
+        with open(full_path, "w") as f:
+            f.write(content)
+        return {"ok": True, "message": f"Created {rel_path}"}
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+@app.get("/api/actions/cron-list")
+def action_cron_list(request: Request):
+    """List available cron jobs for manual trigger."""
+    verify_token(request)
+    try:
+        result = subprocess.run(
+            ["python3", os.path.expanduser("~/.hermes/scripts/cron_helper.py"), "list"],
+            capture_output=True, text=True, timeout=10
+        )
+        if result.returncode == 0:
+            import json
+            return json.loads(result.stdout)
+        return JSONResponse({"error": result.stderr.strip()}, status_code=500)
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8899)))
