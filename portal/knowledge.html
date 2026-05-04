@@ -1,369 +1,493 @@
-     1|<!DOCTYPE html>
-     2|<html lang="zh-CN">
-     3|<head>
-     4|<meta charset="UTF-8">
-     5|<meta name="viewport" content="width=device-width, initial-scale=1.0">
-     6|<title>知识库 — Command Center</title>
-     7|<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
-     8|<style>
-     9|  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-    10|  *{margin:0;padding:0;box-sizing:border-box}
-    11|  html{scroll-behavior:smooth}
-    12|  body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;background:#fff;color:#1d1d1f;-webkit-font-smoothing:antialiased}
-    13|
-    14|  /* NAV */
-    15|  .nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.82);backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid rgba(0,0,0,.06);height:48px;display:flex;align-items:center;justify-content:center}
-    16|  .nav-inner{max-width:980px;width:100%;padding:0 22px;display:flex;justify-content:space-between;align-items:center}
-    17|  .nav-brand{font-size:14px;font-weight:700;letter-spacing:-.3px;color:#1d1d1f;text-decoration:none}
-    18|  .nav-links{display:flex;gap:24px}
-    19|  .nav-links a{font-size:13.5px;color:#86868b;text-decoration:none;letter-spacing:-.1px}
-    20|  .nav-links a:hover{color:#1d1d1f}
-    21|  .nav-links a.active{color:#1d1d1f;font-weight:600}
-    22|
-    23|  /* HERO */
-    24|  .hero{text-align:center;padding:60px 22px 40px;max-width:980px;margin:0 auto}
-    25|  .hero h1{font-size:48px;font-weight:800;letter-spacing:-2px;line-height:1.05;margin-bottom:6px}
-    26|  .hero-sub{font-size:17px;color:#86868b;font-weight:400}
-    27|
-    28|  /* TABS */
-    29|  .tabs{display:flex;justify-content:center;gap:6px;padding:0 22px 40px}
-    30|  .tab-btn{padding:8px 20px;border-radius:980px;border:none;font-size:14px;font-weight:500;font-family:inherit;cursor:pointer;background:#f5f5f7;color:#86868b;transition:all .2s}
-    31|  .tab-btn:hover{background:#e8e8ed;color:#1d1d1f}
-    32|  .tab-btn.active{background:#1d1d1f;color:#fff}
-    33|
-    34|  /* SEARCH */
-    35|  .search-bar{max-width:600px;margin:0 auto 32px;padding:0 22px;display:flex;gap:8px}
-    36|  .search-input{flex:1;padding:10px 18px;border:1px solid #e5e5ea;border-radius:12px;font-size:15px;font-family:inherit;outline:none;transition:border-color .2s}
-    37|  .search-input:focus{border-color:#0071e3}
-    38|  .search-btn{padding:10px 20px;background:#0071e3;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:background .2s}
-    39|  .search-btn:hover{background:#0077ed}
-    40|
-    41|  /* PANELS */
-    42|  .panel{max-width:980px;margin:0 auto;padding:0 22px 60px;display:none}
-    43|  .panel.active{display:block}
-    44|
-    45|  /* SECTION HEADERS */
-    46|  .sec-head{margin-bottom:20px}
-    47|  .sec-eyebrow{font-size:12px;font-weight:600;color:#86868b;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
-    48|  .sec-title{font-size:28px;font-weight:800;letter-spacing:-1px}
-    49|
-    50|  /* ITEM LIST */
-    51|  .item-list{border-top:1px solid #e5e5ea}
-    52|  .item{display:flex;align-items:center;padding:16px 0;border-bottom:1px solid #e5e5ea;cursor:pointer;transition:background .12s}
-    53|  .item:hover{background:#fafafa;margin:0 -22px;padding:16px 22px;border-color:transparent}
-    54|  .item-icon{font-size:20px;width:40px;height:40px;background:#f5f5f7;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-right:14px;flex-shrink:0}
-    55|  .item-body{flex:1;min-width:0}
-    56|  .item-title{font-size:14.5px;font-weight:600;letter-spacing:-.1px;margin-bottom:2px}
-    57|  .item-desc{font-size:13px;color:#86868b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    58|  .item-meta{margin-left:14px;flex-shrink:0;text-align:right}
-    59|  .item-badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:980px;display:inline-block}
-    60|  .badge-blue{background:#e5f0ff;color:#0071e3}
-    61|  .badge-green{background:#e8f8ed;color:#30d158}
-    62|  .badge-orange{background:#fff4e0;color:#c88200}
-    63|  .badge-gray{background:#f5f5f7;color:#8e8e93}
-    64|  .badge-red{background:#ffe5e5;color:#e53935}
-    65|  .item-date{font-size:11.5px;color:#aeaeb2;margin-top:2px}
-    66|
-    67|  /* DETAIL VIEW */
-    68|  .detail{display:none}
-    69|  .detail.show{display:block}
-    70|  .detail-back{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:#0071e3;cursor:pointer;font-weight:500;margin-bottom:20px}
-    71|  .detail-back:hover{text-decoration:underline}
-    72|  .detail-title{font-size:24px;font-weight:700;letter-spacing:-.5px;margin-bottom:6px}
-    73|  .detail-meta{font-size:13px;color:#86868b;margin-bottom:20px;display:flex;gap:12px;flex-wrap:wrap}
-    74|  .detail-content{background:#f5f5f7;border-radius:14px;padding:24px;font-size:14px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
-    75|
-    76|  /* EXPERT CARDS */
-    77|  .expert-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
-    78|  .expert-card{padding:20px;background:#f5f5f7;border-radius:14px;transition:background .15s}
-    79|  .expert-card:hover{background:#e8e8ed}
-    80|  .expert-name{font-size:15px;font-weight:600;margin-bottom:2px}
-    81|  .expert-role{font-size:13px;color:#86868b;margin-bottom:8px}
-    82|  .expert-caps{display:flex;gap:4px;flex-wrap:wrap}
-    83|  .cap-tag{font-size:11px;padding:3px 8px;border-radius:980px;background:#fff;color:#86868b}
-    84|
-    85|  /* BLACKBOARD */
-    86|  .bb-entry{padding:16px 20px;background:#f5f5f7;border-radius:12px;margin-bottom:10px}
-    87|  .bb-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
-    88|  .bb-cat{font-size:11px;font-weight:600;padding:3px 10px;border-radius:980px}
-    89|  .bb-time{font-size:11.5px;color:#aeaeb2}
-    90|  .bb-title{font-size:14.5px;font-weight:600;margin-bottom:4px}
-    91|  .bb-body{font-size:13.5px;color:#515154;line-height:1.6}
-    92|
-    93|  /* EMPTY STATE */
-    94|  .empty{text-align:center;padding:60px 22px;color:#aeaeb2;font-size:15px}
-    95|  .empty-icon{font-size:48px;margin-bottom:12px}
-    96|
-    97|  /* LOADING */
-    98|  .loading{opacity:.5;pointer-events:none}
-    99|  @keyframes spin{to{transform:rotate(360deg)}}
-   100|  .spinner{display:inline-block;width:16px;height:16px;border:2px solid #e5e5ea;border-top-color:#0071e3;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
-   101|
-   102|  footer{text-align:center;padding:40px 22px;font-size:12.5px;color:#c7c7cc;border-top:1px solid #e5e5ea;max-width:980px;margin:0 auto}
-   103|
-   104|  /* RESPONSIVE */
-   105|  @media(max-width:640px){
-   106|    .hero h1{font-size:32px}
-   107|    .tabs{flex-wrap:wrap}
-   108|    .expert-grid{grid-template-columns:1fr}
-   109|  }
-   110|</style>
-   111|</head>
-   112|<body>
-   113|
-   114|<!-- NAV -->
-   115|<nav class="nav">
-   116|  <div class="nav-inner">
-   117|    <a href="/portal" class="nav-brand">Command Center</a>
-   118|    <div class="nav-links">
-   119|      <a href="/portal">Portal</a>
-   120|      <a href="/docs/Notes">Docs</a>
-   121|      <a href="/graph">Graph</a>
-   122|      <a href="/knowledge" class="active">Knowledge</a>
-   123|    </div>
-   124|  </div>
-   125|</nav>
-   126|
-   127|<!-- HERO -->
-   128|<div class="hero">
-   129|  <h1>知识库</h1>
-   130|  <p class="hero-sub">搜索资产、查看决策、跟踪专家和黑板</p>
-   131|</div>
-   132|
-   133|<!-- TABS -->
-   134|<div class="tabs">
-   135|  <button class="tab-btn active" data-tab="assets">🔍 资产</button>
-   136|  <button class="tab-btn" data-tab="decisions">📋 决策</button>
-   137|  <button class="tab-btn" data-tab="experts">🤖 专家</button>
-   138|  <button class="tab-btn" data-tab="blackboard">📝 黑板</button>
-   139|</div>
-   140|
-   141|<!-- ASSETS PANEL -->
-   142|<div id="panel-assets" class="panel active">
-   143|  <div class="search-bar">
-   144|    <input class="search-input" id="searchInput" type="text" placeholder="搜索知识资产...">
-   145|    <button class="search-btn" onclick="doSearch()">搜索</button>
-   146|  </div>
-   147|  <div id="assetsList" class="item-list">
-   148|    <div class="empty"><div class="empty-icon">📂</div>输入关键词搜索知识资产</div>
-   149|  </div>
-   150|  <div id="assetDetail" class="detail">
-   151|    <div class="detail-back" onclick="closeDetail()">← 返回结果</div>
-   152|    <div id="detailContent"></div>
-   153|  </div>
-   154|</div>
-   155|
-   156|<!-- DECISIONS PANEL -->
-   157|<div id="panel-decisions" class="panel">
-   158|  <div id="decisionsList" class="item-list"></div>
-   159|</div>
-   160|
-   161|<!-- EXPERTS PANEL -->
-   162|<div id="panel-experts" class="panel">
-   163|  <div id="expertsGrid" class="expert-grid"></div>
-   164|</div>
-   165|
-   166|<!-- BLACKBOARD PANEL -->
-   167|<div id="panel-blackboard" class="panel">
-   168|  <div id="blackboardList"></div>
-   169|</div>
-   170|
-   171|<footer>知识库 · Powered by Hermes CLI</footer>
-   172|
-   173|<script>
-   174|const API = '/api/knowledge';
-   175|let currentItems = [];
-   176|
-   177|// TABS
-   178|document.querySelectorAll('.tab-btn').forEach(btn => {
-   179|  btn.addEventListener('click', () => {
-   180|    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-   181|    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-   182|    btn.classList.add('active');
-   183|    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
-   184|    // Auto-load on first visit
-   185|    if (btn.dataset.tab === 'decisions' && !document.querySelector('#decisionsList .item'))
-   186|      loadDecisions();
-   187|    if (btn.dataset.tab === 'experts' && !document.querySelector('#expertsGrid .expert-card'))
-   188|      loadExperts();
-   189|    if (btn.dataset.tab === 'blackboard' && !document.querySelector('#blackboardList .bb-entry'))
-   190|      loadBlackboard();
-   191|  });
-   192|});
-   193|
-   194|// SEARCH
-   195|document.getElementById('searchInput').addEventListener('keydown', e => {
-   196|  if (e.key === 'Enter') doSearch();
-   197|});
-   198|
-   199|async function doSearch() {
-   200|  const q = document.getElementById('searchInput').value.trim();
-   201|  if (!q) return;
-   202|  const list = document.getElementById('assetsList');
-   203|  const detail = document.getElementById('assetDetail');
-   204|  detail.classList.remove('show');
-   205|  list.innerHTML = '<div class="empty"><span class="spinner"></span> 搜索中...</div>';
-   206|  try {
-   207|    const res = await fetch(`${API}/search?q=${encodeURIComponent(q)}`);
-   208|    const data = await res.json();
-   209|    currentItems = Array.isArray(data) ? data : [];
-   210|    if (currentItems.length === 0) {
-   211|      list.innerHTML = '<div class="empty"><div class="empty-icon">🔍</div>未找到结果</div>';
-   212|      return;
-   213|    }
-   214|    list.innerHTML = currentItems.map((it, i) => `
-   215|      <div class="item" onclick="showDetail(${i})">
-   216|        <div class="item-icon">${typeIcon(it.type)}</div>
-   217|        <div class="item-body">
-   218|          <div class="item-title">${esc(it.title)}</div>
-   219|          <div class="item-desc">${esc(it.summary || '')}</div>
-   220|        </div>
-   221|        <div class="item-meta">
-   222|          <span class="item-badge ${sensBadge(it.sensitivity)}">${it.sensitivity || 'public'}</span>
-   223|          ${it.project ? `<div class="item-date">${esc(it.project)}</div>` : ''}
-   224|        </div>
-   225|      </div>
-   226|    `).join('');
-   227|  } catch (e) {
-   228|    list.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div>错误：${esc(e.message)}</div>`;
-   229|  }
-   230|}
-   231|
-   232|async function showDetail(idx) {
-   233|  const it = currentItems[idx];
-   234|  if (!it) return;
-   235|  document.getElementById('assetsList').style.display = 'none';
-   236|  const detail = document.getElementById('assetDetail');
-   237|  const dc = document.getElementById('detailContent');
-   238|  dc.innerHTML = '<span class="spinner"></span> 加载中...';
-   239|  detail.classList.add('show');
-   240|  try {
-   241|    const res = await fetch(`${API}/items/${encodeURIComponent(it.id)}`);
-   242|    const full = await res.json();
-   243|    dc.innerHTML = `
-   244|      <div class="detail-title">${esc(full.title)}</div>
-   245|      <div class="detail-meta">
-   246|        <span class="item-badge ${sensBadge(full.sensitivity)}">${full.sensitivity || 'public'}</span>
-   247|        ${full.project ? `<span>📁 ${esc(full.project)}</span>` : ''}
-   248|        <span>📅 ${esc(full.updated_at || '')}</span>
-   249|        ${(full.tags||[]).map(t => `<span class="cap-tag">${esc(t)}</span>`).join('')}
-   250|      </div>
-   251|      <div class="detail-content">${esc(full.content || '暂无内容')}</div>
-   252|    `;
-   253|  } catch (e) {
-   254|    dc.innerHTML = `<div class="detail-content">错误：${esc(e.message)}</div>`;
-   255|  }
-   256|}
-   257|
-   258|function closeDetail() {
-   259|  document.getElementById('assetDetail').classList.remove('show');
-   260|  document.getElementById('assetsList').style.display = '';
-   261|}
-   262|
-   263|// DECISIONS
-   264|async function loadDecisions() {
-   265|  const el = document.getElementById('decisionsList');
-   266|  el.innerHTML = '<div class="empty"><span class="spinner"></span> 加载中...</div>';
-   267|  try {
-   268|    const res = await fetch(`${API}/decisions`);
-   269|    const data = await res.json();
-   270|    const decisions = Array.isArray(data) ? data : [];
-   271|    if (decisions.length === 0) {
-   272|      el.innerHTML = '<div class="empty"><div class="empty-icon">📋</div>暂无决策记录</div>';
-   273|      return;
-   274|    }
-   275|    el.innerHTML = decisions.map(d => `
-   276|      <div class="item" onclick="this.querySelector('.dec-body').style.display = this.querySelector('.dec-body').style.display==='none'?'block':'none'">
-   277|        <div class="item-icon">📋</div>
-   278|        <div class="item-body">
-   279|          <div class="item-title">${esc(d.title)}</div>
-   280|          <div class="item-desc">${esc(d.body || '').substring(0, 120)}${(d.body||'').length > 120 ? '...' : ''}</div>
-   281|          <div class="dec-body" style="display:none;margin-top:12px;background:#f5f5f7;border-radius:10px;padding:16px;font-size:13.5px;line-height:1.7;white-space:pre-wrap">
-   282|${esc(d.body || '')}
-   283|${d.rationale ? '\n<strong>理由：</strong> ' + esc(d.rationale) : ''}
-   284|${d.alternatives ? '\n<strong>备选方案：</strong> ' + esc(d.alternatives) : ''}</div>
-   285|        </div>
-   286|        <div class="item-meta">
-   287|          <span class="item-badge badge-blue">${esc(d.project || '')}</span>
-   288|          <div class="item-date">${esc(d.created_at || '').substring(0, 10)}</div>
-   289|        </div>
-   290|      </div>
-   291|    `).join('');
-   292|  } catch (e) {
-   293|    el.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div>错误：${esc(e.message)}</div>`;
-   294|  }
-   295|}
-   296|
-   297|// EXPERTS
-   298|async function loadExperts() {
-   299|  const el = document.getElementById('expertsGrid');
-   300|  el.innerHTML = '<div class="empty"><span class="spinner"></span> 加载中...</div>';
-   301|  try {
-   302|    const res = await fetch(`${API}/experts`);
-   303|    const data = await res.json();
-   304|    const experts = Array.isArray(data) ? data : [];
-   305|    if (experts.length === 0) {
-   306|      el.innerHTML = '<div class="empty"><div class="empty-icon">🤖</div>暂无注册专家</div>';
-   307|      return;
-   308|    }
-   309|    el.innerHTML = experts.map(e => `
-   310|      <div class="expert-card">
-   311|        <div class="expert-name">${esc(e.role || e.id)}</div>
-   312|        <div class="expert-role">${esc(e.project || '')} · <span class="item-badge ${e.status==='active'?'badge-green':'badge-gray'}">${e.status}</span></div>
-   313|        <div class="expert-caps">${(e.capabilities||[]).map(c => `<span class="cap-tag">${esc(c)}</span>`).join('')}</div>
-   314|        <div style="margin-top:8px;font-size:11.5px;color:#aeaeb2">最后心跳：${esc(e.last_heartbeat || '').substring(0, 16)}</div>
-   315|      </div>
-   316|    `).join('');
-   317|  } catch (e) {
-   318|    el.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div>错误：${esc(e.message)}</div>`;
-   319|  }
-   320|}
-   321|
-   322|// BLACKBOARD
-   323|async function loadBlackboard() {
-   324|  const el = document.getElementById('blackboardList');
-   325|  el.innerHTML = '<div class="empty"><span class="spinner"></span> 加载中...</div>';
-   326|  try {
-   327|    const res = await fetch(`${API}/blackboard`);
-   328|    const data = await res.json();
-   329|    const entries = Array.isArray(data) ? data : [];
-   330|    if (entries.length === 0) {
-   331|      el.innerHTML = '<div class="empty"><div class="empty-icon">📝</div>黑板暂无内容</div>';
-   332|      return;
-   333|    }
-   334|    const catColor = { progress: 'badge-green', conflict: 'badge-red', note: 'badge-blue' };
-   335|    el.innerHTML = entries.map(e => `
-   336|      <div class="bb-entry">
-   337|        <div class="bb-head">
-   338|          <span class="bb-cat item-badge ${catColor[e.category] || 'badge-gray'}">${esc(e.category || '备注')}</span>
-   339|          <span class="bb-time">${esc(e.timestamp || e.created_at || '').substring(0, 16)}</span>
-   340|        </div>
-   341|        <div class="bb-title">${esc(e.title || '')}</div>
-   342|        <div class="bb-body">${esc(e.body || e.content || '')}</div>
-   343|      </div>
-   344|    `).join('');
-   345|  } catch (e) {
-   346|    el.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div>错误：${esc(e.message)}</div>`;
-   347|  }
-   348|}
-   349|
-   350|// HELPERS
-   351|function esc(s) {
-   352|  if (s == null) return '';
-   353|  const d = document.createElement('div');
-   354|  d.textContent = String(s);
-   355|  return d.innerHTML;
-   356|}
-   357|function typeIcon(t) {
-   358|  const map = { skill: '⚡', decision: '📋', config: '⚙️', doc: '📄', script: '🔧' };
-   359|  return map[t] || '📄';
-   360|}
-   361|function sensBadge(s) {
-   362|  if (s === 'secret') return 'badge-red';
-   363|  if (s === 'internal') return 'badge-orange';
-   364|  return 'badge-gray';
-   365|}
-   366|</script>
-   367|</body>
-   368|</html>
-   369|
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知识库 — Command Center</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;background:#fff;color:#1d1d1f;-webkit-font-smoothing:antialiased}
+
+  /* NAV */
+  .nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.82);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid rgba(0,0,0,.06);height:48px;display:flex;align-items:center;justify-content:center}
+  .nav-inner{max-width:980px;width:100%;padding:0 22px;display:flex;justify-content:space-between;align-items:center}
+  .nav-brand{font-size:14px;font-weight:700;letter-spacing:-.3px;color:#1d1d1f;text-decoration:none}
+  .nav-right{display:flex;align-items:center;gap:16px}
+  .nav-links{display:flex;gap:24px}
+  .nav-links a{font-size:13.5px;color:#86868b;text-decoration:none;letter-spacing:-.1px}
+  .nav-links a:hover{color:#1d1d1f}
+  .nav-links a.active{color:#1d1d1f;font-weight:600}
+  .theme-toggle{background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;display:flex;align-items:center;justify-content:center;transition:background .15s}
+  .theme-toggle:hover{background:#f5f5f7}
+  .theme-toggle svg{width:18px;height:18px;color:#86868b}
+
+  /* HERO */
+  .hero{text-align:center;padding:60px 22px 40px;max-width:980px;margin:0 auto}
+  .hero h1{font-size:48px;font-weight:800;letter-spacing:-2px;line-height:1.05;margin-bottom:6px}
+  .hero-sub{font-size:17px;color:#86868b;font-weight:400}
+
+  /* TABS */
+  .tabs{display:flex;justify-content:center;gap:6px;padding:0 22px 40px}
+  .tab-btn{padding:8px 20px;border-radius:980px;border:none;font-size:14px;font-weight:500;font-family:inherit;cursor:pointer;background:#f5f5f7;color:#86868b;transition:all .2s}
+  .tab-btn:hover{background:#e8e8ed;color:#1d1d1f}
+  .tab-btn.active{background:#1d1d1f;color:#fff}
+
+  /* SEARCH */
+  .search-bar{max-width:600px;margin:0 auto 32px;padding:0 22px;display:flex;gap:8px}
+  .search-input{flex:1;padding:10px 18px;border:1px solid #e5e5ea;border-radius:12px;font-size:15px;font-family:inherit;outline:none;transition:border-color .2s;background:#fff;color:#1d1d1f}
+  .search-input:focus{border-color:#0071e3}
+  .search-btn{padding:10px 20px;background:#0071e3;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:background .2s}
+  .search-btn:hover{background:#0077ed}
+
+  /* PANELS */
+  .panel{max-width:980px;margin:0 auto;padding:0 22px 60px;display:none}
+  .panel.active{display:block}
+
+  /* ITEM LIST */
+  .item-list{border-top:1px solid #e5e5ea}
+  .item{display:flex;align-items:center;padding:16px 0;border-bottom:1px solid #e5e5ea;cursor:pointer;transition:background .12s}
+  .item:hover{background:#fafafa;margin:0 -22px;padding:16px 22px;border-color:transparent}
+  .item-icon{font-size:20px;width:40px;height:40px;background:#f5f5f7;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-right:14px;flex-shrink:0}
+  .item-body{flex:1;min-width:0}
+  .item-title{font-size:14.5px;font-weight:600;letter-spacing:-.1px;margin-bottom:2px}
+  .item-desc{font-size:13px;color:#86868b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .item-meta{margin-left:14px;flex-shrink:0;text-align:right}
+  .item-badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:980px;display:inline-block}
+  .badge-blue{background:#e5f0ff;color:#0071e3}
+  .badge-green{background:#e8f8ed;color:#30d158}
+  .badge-orange{background:#fff4e0;color:#c88200}
+  .badge-gray{background:#f5f5f7;color:#8e8e93}
+  .badge-red{background:#ffe5e5;color:#e53935}
+  .item-date{font-size:11.5px;color:#aeaeb2;margin-top:2px}
+
+  /* DETAIL */
+  .detail{display:none}
+  .detail.show{display:block}
+  .detail-back{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:#0071e3;cursor:pointer;font-weight:500;margin-bottom:20px}
+  .detail-back:hover{text-decoration:underline}
+  .detail-title{font-size:24px;font-weight:700;letter-spacing:-.5px;margin-bottom:6px}
+  .detail-meta{font-size:13px;color:#86868b;margin-bottom:20px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .detail-content{background:#f5f5f7;border-radius:14px;padding:24px;font-size:14px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
+
+  /* EXPERT CARDS */
+  .expert-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+  .expert-card{padding:20px;background:#f5f5f7;border-radius:14px;transition:background .15s}
+  .expert-card:hover{background:#e8e8ed}
+  .expert-name{font-size:15px;font-weight:600;margin-bottom:2px}
+  .expert-role{font-size:13px;color:#86868b;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+  .expert-caps{display:flex;gap:4px;flex-wrap:wrap}
+  .cap-tag{font-size:11px;padding:3px 8px;border-radius:980px;background:#fff;color:#86868b}
+
+  /* BLACKBOARD */
+  .bb-entry{padding:16px 20px;background:#f5f5f7;border-radius:12px;margin-bottom:10px}
+  .bb-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .bb-time{font-size:11.5px;color:#aeaeb2}
+  .bb-title{font-size:14.5px;font-weight:600;margin-bottom:4px}
+  .bb-body{font-size:13.5px;color:#515154;line-height:1.6}
+
+  /* EMPTY / LOADING */
+  .empty{text-align:center;padding:60px 22px;color:#aeaeb2;font-size:15px}
+  .empty-icon{font-size:48px;margin-bottom:12px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .spinner{display:inline-block;width:16px;height:16px;border:2px solid #e5e5ea;border-top-color:#0071e3;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
+
+  footer{text-align:center;padding:40px 22px;font-size:12.5px;color:#c7c7cc;border-top:1px solid #e5e5ea;max-width:980px;margin:0 auto}
+
+  /* ========== DARK THEME ========== */
+  [data-theme="dark"] body{background:#0a0a0f;color:#e2e8f0}
+  [data-theme="dark"] .nav{background:rgba(10,10,15,.9);border-bottom-color:#1e293b}
+  [data-theme="dark"] .nav-brand{color:#e2e8f0}
+  [data-theme="dark"] .nav-links a{color:#94a3b8}
+  [data-theme="dark"] .nav-links a:hover{color:#e2e8f0}
+  [data-theme="dark"] .nav-links a.active{color:#e2e8f0}
+  [data-theme="dark"] .theme-toggle:hover{background:#1e293b}
+  [data-theme="dark"] .theme-toggle svg{color:#94a3b8}
+
+  [data-theme="dark"] .hero-sub{color:#94a3b8}
+  [data-theme="dark"] .tab-btn{background:#1e293b;color:#94a3b8}
+  [data-theme="dark"] .tab-btn:hover{background:#334155;color:#e2e8f0}
+  [data-theme="dark"] .tab-btn.active{background:#f59e0b;color:#0a0a0f}
+
+  [data-theme="dark"] .search-input{background:rgba(255,255,255,.08);color:#e2e8f0;border-color:rgba(255,255,255,.12)}
+  [data-theme="dark"] .search-input:focus{border-color:#f59e0b}
+  [data-theme="dark"] .search-btn{background:#f59e0b;color:#0a0a0f}
+
+  [data-theme="dark"] .item-list{border-top-color:#1e293b}
+  [data-theme="dark"] .item{border-bottom-color:#1e293b}
+  [data-theme="dark"] .item:hover{background:#1e293b}
+  [data-theme="dark"] .item-icon{background:#1e293b}
+  [data-theme="dark"] .item-desc{color:#94a3b8}
+  [data-theme="dark"] .item-date{color:#64748b}
+
+  [data-theme="dark"] .detail-content{background:#1e293b}
+  [data-theme="dark"] .detail-meta{color:#94a3b8}
+
+  [data-theme="dark"] .expert-card{background:#1e293b}
+  [data-theme="dark"] .expert-card:hover{background:#334155}
+  [data-theme="dark"] .expert-role{color:#94a3b8}
+  [data-theme="dark"] .cap-tag{background:#0a0a0f;color:#94a3b8}
+
+  [data-theme="dark"] .bb-entry{background:#1e293b}
+  [data-theme="dark"] .bb-time{color:#64748b}
+  [data-theme="dark"] .bb-title{color:#e2e8f0}
+  [data-theme="dark"] .bb-body{color:#94a3b8}
+
+  [data-theme="dark"] .badge-blue{background:rgba(59,130,246,.15);color:#60a5fa}
+  [data-theme="dark"] .badge-green{background:#052e16;color:#4ade80}
+  [data-theme="dark"] .badge-orange{background:#451a03;color:#fbbf24}
+  [data-theme="dark"] .badge-gray{background:#1e293b;color:#64748b}
+  [data-theme="dark"] .badge-red{background:rgba(239,68,68,.15);color:#f87171}
+
+  [data-theme="dark"] .spinner{border-color:#1e293b;border-top-color:#f59e0b}
+  [data-theme="dark"] .empty{color:#64748b}
+
+  [data-theme="dark"] footer{color:#475569;border-top-color:#1e293b}
+
+  /* FORM STYLES */
+  .form-toggle{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:980px;border:1px dashed #d2d2d7;background:none;font-size:13.5px;color:#86868b;cursor:pointer;font-family:inherit;transition:all .2s;margin-bottom:16px}
+  .form-toggle:hover{border-color:#0071e3;color:#0071e3}
+  .form-box{display:none;background:#f5f5f7;border-radius:14px;padding:20px;margin-bottom:20px}
+  .form-box.open{display:block}
+  .form-row{margin-bottom:12px}
+  .form-row label{display:block;font-size:12px;font-weight:600;color:#86868b;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+  .form-row input,.form-row textarea,.form-row select{width:100%;padding:8px 14px;border:1px solid #e5e5ea;border-radius:10px;font-size:14px;font-family:inherit;outline:none;background:#fff;color:#1d1d1f;transition:border .2s}
+  .form-row input:focus,.form-row textarea:focus{border-color:#0071e3}
+  .form-row textarea{resize:vertical;min-height:60px}
+  .form-submit{padding:8px 24px;background:#0071e3;color:#fff;border:none;border-radius:980px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .2s}
+  .form-submit:hover{background:#0077ed}
+  .form-msg{font-size:13px;margin-top:8px;display:none}
+  .form-msg.ok{color:#30d158;display:block}
+  .form-msg.err{color:#e53935;display:block}
+
+  [data-theme="dark"] .form-toggle{border-color:#334155;color:#94a3b8}
+  [data-theme="dark"] .form-toggle:hover{border-color:#f59e0b;color:#f59e0b}
+  [data-theme="dark"] .form-box{background:#1e293b}
+  [data-theme="dark"] .form-row input,[data-theme="dark"] .form-row textarea,[data-theme="dark"] .form-row select{background:#0a0a0f;color:#e2e8f0;border-color:#334155}
+  [data-theme="dark"] .form-row input:focus,[data-theme="dark"] .form-row textarea:focus{border-color:#f59e0b}
+  [data-theme="dark"] .form-submit{background:#f59e0b;color:#0a0a0f}
+  [data-theme="dark"] .form-msg.ok{color:#4ade80}
+  [data-theme="dark"] .form-msg.err{color:#f87171}
+
+  @media(max-width:640px){
+    .hero h1{font-size:32px}
+    .tabs{flex-wrap:wrap}
+    .expert-grid{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="/portal" class="nav-brand">⚡ Command Center</a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="/portal">Portal</a>
+        <a href="/docs/Notes">文档</a>
+        <a href="/graph">Graph</a>
+        <a href="/knowledge" class="active">知识库</a>
+      </div>
+      <button class="theme-toggle" id="theme-toggle" title="切换主题">
+        <svg id="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        <svg id="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>知识库</h1>
+  <p class="hero-sub">搜索资产、查看决策、跟踪专家和黑板</p>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="assets">🔍 资产</button>
+  <button class="tab-btn" data-tab="decisions">📋 决策</button>
+  <button class="tab-btn" data-tab="experts">🤖 专家</button>
+  <button class="tab-btn" data-tab="blackboard">📝 黑板</button>
+</div>
+
+<div id="panel-assets" class="panel active">
+  <div class="search-bar">
+    <input class="search-input" id="searchInput" type="text" placeholder="搜索知识资产...">
+    <button class="search-btn" onclick="doSearch()">搜索</button>
+  </div>
+  <div id="assetsList" class="item-list">
+    <div class="empty"><span class="spinner"></span>加载中...</div>
+  </div>
+  <div id="assetDetail" class="detail">
+    <div class="detail-back" onclick="closeDetail()">← 返回结果</div>
+    <div id="detailContent"></div>
+  </div>
+</div>
+
+<div id="panel-decisions" class="panel">
+  <button class="form-toggle" onclick="toggleForm('decForm')">＋ 发布决策</button>
+  <div id="decForm" class="form-box">
+    <div class="form-row"><label>标题</label><input name="title" placeholder="决策标题"></div>
+    <div class="form-row"><label>项目</label><input name="project" placeholder="项目名称"></div>
+    <div class="form-row"><label>作者</label><input name="author" placeholder="作者"></div>
+    <div class="form-row"><label>正文</label><textarea name="body" placeholder="决策正文内容"></textarea></div>
+    <div class="form-row"><label>理由</label><textarea name="rationale" placeholder="决策理由"></textarea></div>
+    <div class="form-row"><label>备选方案</label><textarea name="alternatives" placeholder="备选方案"></textarea></div>
+    <div class="form-row"><label>标签</label><input name="tags" placeholder="标签，逗号分隔"></div>
+    <button class="form-submit" onclick="submitDecision()">提交</button>
+    <div id="decMsg" class="form-msg"></div>
+  </div>
+  <div id="decisionsList" class="item-list"></div>
+</div>
+
+<div id="panel-experts" class="panel">
+  <button class="form-toggle" onclick="toggleForm('expForm')">＋ 注册专家</button>
+  <div id="expForm" class="form-box">
+    <div class="form-row"><label>ID</label><input name="expert_id" placeholder="专家 ID"></div>
+    <div class="form-row"><label>角色</label><input name="role" placeholder="角色"></div>
+    <div class="form-row"><label>项目</label><input name="project" placeholder="项目名称"></div>
+    <div class="form-row"><label>能力</label><input name="capabilities" placeholder="能力，逗号分隔"></div>
+    <button class="form-submit" onclick="submitExpert()">提交</button>
+    <div id="expMsg" class="form-msg"></div>
+  </div>
+  <div id="expertsGrid" class="expert-grid"></div>
+</div>
+
+<div id="panel-blackboard" class="panel">
+  <div id="blackboardList"></div>
+</div>
+
+<footer>知识库 · Powered by Hermes</footer>
+
+<script>
+const API = '/api/knowledge';
+let currentItems = [];
+
+// Theme (shared with portal via localStorage cc-theme)
+function initTheme(){
+  let theme = localStorage.getItem('cc-theme') || 'light';
+  document.documentElement.setAttribute('data-theme', theme);
+  updateThemeIcon(theme);
+}
+function updateThemeIcon(theme){
+  document.getElementById('theme-icon-sun').style.display = theme === 'dark' ? 'none' : 'block';
+  document.getElementById('theme-icon-moon').style.display = theme === 'dark' ? 'block' : 'none';
+}
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('cc-theme', next);
+  updateThemeIcon(next);
+}
+document.getElementById('theme-toggle').onclick = toggleTheme;
+initTheme();
+
+// Listen for storage changes (if portal toggles theme in another tab)
+window.addEventListener('storage', function(e) {
+  if (e.key === 'cc-theme') {
+    initTheme();
+  }
+});
+
+// Tabs
+document.querySelectorAll('.tab-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+    document.querySelectorAll('.panel').forEach(function(p) { p.classList.remove('active'); });
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'decisions' && !document.querySelector('#decisionsList .item'))
+      loadDecisions();
+    if (btn.dataset.tab === 'experts' && !document.querySelector('#expertsGrid .expert-card'))
+      loadExperts();
+    if (btn.dataset.tab === 'blackboard' && !document.querySelector('#blackboardList .bb-entry'))
+      loadBlackboard();
+  });
+});
+
+// Search
+document.getElementById('searchInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') doSearch();
+});
+
+async function doSearch() {
+  var q = document.getElementById('searchInput').value.trim();
+  if (!q) return;
+  var list = document.getElementById('assetsList');
+  var detail = document.getElementById('assetDetail');
+  detail.classList.remove('show');
+  list.innerHTML = '<div class="empty"><span class="spinner"></span>搜索中...</div>';
+  try {
+    var res = await fetch(API + '/search?q=' + encodeURIComponent(q));
+    var data = await res.json();
+    currentItems = Array.isArray(data) ? data : [];
+    if (currentItems.length === 0) {
+      list.innerHTML = '<div class="empty"><div class="empty-icon">🔍</div>未找到结果</div>';
+      return;
+    }
+    list.innerHTML = currentItems.map(function(it, i) {
+      return '<div class="item" onclick="showDetail(' + i + ')">' +
+        '<div class="item-icon">' + typeIcon(it.type) + '</div>' +
+        '<div class="item-body">' +
+          '<div class="item-title">' + esc(it.title) + '</div>' +
+          '<div class="item-desc">' + esc(it.summary || '') + '</div>' +
+        '</div>' +
+        '<div class="item-meta">' +
+          '<span class="item-badge ' + sensBadge(it.sensitivity) + '">' + (it.sensitivity || 'public') + '</span>' +
+          (it.project ? '<div class="item-date">' + esc(it.project) + '</div>' : '') +
+        '</div>' +
+      '</div>';
+    }).join('');
+  } catch (e) {
+    list.innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div>错误：' + esc(e.message) + '</div>';
+  }
+}
+
+async function showDetail(idx) {
+  var it = currentItems[idx];
+  if (!it) return;
+  document.getElementById('assetsList').style.display = 'none';
+  var detail = document.getElementById('assetDetail');
+  var dc = document.getElementById('detailContent');
+  dc.innerHTML = '<span class="spinner"></span>加载中...';
+  detail.classList.add('show');
+  try {
+    var res = await fetch(API + '/items/' + encodeURIComponent(it.id));
+    var full = await res.json();
+    var tags = (full.tags || []).map(function(t) { return '<span class="cap-tag">' + esc(t) + '</span>'; }).join('');
+    dc.innerHTML =
+      '<div class="detail-title">' + esc(full.title) + '</div>' +
+      '<div class="detail-meta">' +
+        '<span class="item-badge ' + sensBadge(full.sensitivity) + '">' + (full.sensitivity || 'public') + '</span>' +
+        (full.project ? '<span>📁 ' + esc(full.project) + '</span>' : '') +
+        '<span>📅 ' + esc(full.updated_at || '').substring(0, 10) + '</span>' +
+        tags +
+      '</div>' +
+      '<div class="detail-content">' + esc(full.content || '暂无内容') + '</div>';
+  } catch (e) {
+    dc.innerHTML = '<div class="detail-content">错误：' + esc(e.message) + '</div>';
+  }
+}
+
+function closeDetail() {
+  document.getElementById('assetDetail').classList.remove('show');
+  document.getElementById('assetsList').style.display = '';
+}
+
+// Decisions
+async function loadDecisions() {
+  var el = document.getElementById('decisionsList');
+  el.innerHTML = '<div class="empty"><span class="spinner"></span>加载中...</div>';
+  try {
+    var res = await fetch(API + '/decisions');
+    var data = await res.json();
+    var decisions = Array.isArray(data) ? data : [];
+    if (decisions.length === 0) {
+      el.innerHTML = '<div class="empty"><div class="empty-icon">📋</div>暂无决策记录</div>';
+      return;
+    }
+    el.innerHTML = decisions.map(function(d) {
+      var body = esc(d.body || '');
+      var preview = body.length > 120 ? body.substring(0, 120) + '...' : body;
+      return '<div class="item" onclick="toggleDetail(this)">' +
+        '<div class="item-icon">📋</div>' +
+        '<div class="item-body">' +
+          '<div class="item-title">' + esc(d.title) + '</div>' +
+          '<div class="item-desc">' + preview + '</div>' +
+          '<div class="dec-expand" style="display:none;margin-top:12px;background:var(--card-bg,#f5f5f7);border-radius:10px;padding:16px;font-size:13.5px;line-height:1.7;white-space:pre-wrap">' +
+            body +
+            (d.rationale ? '\n\n<strong>理由：</strong>' + esc(d.rationale) : '') +
+            (d.alternatives ? '\n\n<strong>备选方案：</strong>' + esc(d.alternatives) : '') +
+          '</div>' +
+        '</div>' +
+        '<div class="item-meta">' +
+          '<span class="item-badge badge-blue">' + esc(d.project || '') + '</span>' +
+          '<div class="item-date">' + esc(d.created_at || '').substring(0, 10) + '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  } catch (e) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div>错误：' + esc(e.message) + '</div>';
+  }
+}
+
+function toggleDetail(el) {
+  var exp = el.querySelector('.dec-expand');
+  if (exp) exp.style.display = exp.style.display === 'none' ? 'block' : 'none';
+}
+
+// Experts
+async function loadExperts() {
+  var el = document.getElementById('expertsGrid');
+  el.innerHTML = '<div class="empty"><span class="spinner"></span>加载中...</div>';
+  try {
+    var res = await fetch(API + '/experts');
+    var data = await res.json();
+    var experts = Array.isArray(data) ? data : [];
+    if (experts.length === 0) {
+      el.innerHTML = '<div class="empty"><div class="empty-icon">🤖</div>暂无注册专家</div>';
+      return;
+    }
+    el.innerHTML = experts.map(function(e) {
+      var caps = (e.capabilities || []).map(function(c) { return '<span class="cap-tag">' + esc(c) + '</span>'; }).join('');
+      var statusBadge = e.status === 'active' ? 'badge-green' : 'badge-gray';
+      return '<div class="expert-card">' +
+        '<div class="expert-name">' + esc(e.role || e.id) + '</div>' +
+        '<div class="expert-role">' + esc(e.project || '') + ' · <span class="item-badge ' + statusBadge + '">' + e.status + '</span></div>' +
+        '<div class="expert-caps">' + caps + '</div>' +
+        '<div style="margin-top:8px;font-size:11.5px;color:#aeaeb2">最后心跳：' + esc(e.last_heartbeat || '').substring(0, 16) + '</div>' +
+      '</div>';
+    }).join('');
+  } catch (e) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div>错误：' + esc(e.message) + '</div>';
+  }
+}
+
+// Blackboard
+async function loadBlackboard() {
+  var el = document.getElementById('blackboardList');
+  el.innerHTML = '<div class="empty"><span class="spinner"></span>加载中...</div>';
+  try {
+    var res = await fetch(API + '/blackboard');
+    var data = await res.json();
+    var entries = Array.isArray(data) ? data : [];
+    if (entries.length === 0) {
+      el.innerHTML = '<div class="empty"><div class="empty-icon">📝</div>黑板暂无内容</div>';
+      return;
+    }
+    var catColor = { progress: 'badge-green', conflict: 'badge-red', note: 'badge-blue' };
+    var catLabel = { progress: '进展', conflict: '冲突', note: '备注' };
+    el.innerHTML = entries.map(function(e) {
+      return '<div class="bb-entry">' +
+        '<div class="bb-head">' +
+          '<span class="item-badge ' + (catColor[e.category] || 'badge-gray') + '">' + (catLabel[e.category] || e.category || '备注') + '</span>' +
+          '<span class="bb-time">' + esc(e.timestamp || e.created_at || '').substring(0, 16) + '</span>' +
+        '</div>' +
+        '<div class="bb-title">' + esc(e.title || '') + '</div>' +
+        '<div class="bb-body">' + esc(e.body || e.content || '') + '</div>' +
+      '</div>';
+    }).join('');
+  } catch (e) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div>错误：' + esc(e.message) + '</div>';
+  }
+}
+
+function esc(s) {
+  if (s == null) return '';
+  var d = document.createElement('div');
+  d.textContent = String(s);
+  return d.innerHTML;
+}
+function typeIcon(t) {
+  var map = { skill: '⚡', decision: '📋', config: '⚙️', doc: '📄', script: '🔧' };
+  return map[t] || '📄';
+}
+function sensBadge(s) {
+  if (s === 'secret') return 'badge-red';
+  if (s === 'internal') return 'badge-orange';
+  return 'badge-gray';
+}
+</script>
+</body>
+</html>

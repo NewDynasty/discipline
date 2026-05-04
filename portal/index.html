@@ -233,6 +233,7 @@
       <a href="#cron">定时任务</a>
       <a href="#research">研究</a>
       <a href="#kanban">看板</a>
+      <a href="/knowledge">🧠 知识库</a>
     </div>
     <span class="nav-clock" id="clock"></span>
     <button class="theme-toggle" id="theme-toggle" title="切换主题">
@@ -272,7 +273,7 @@
   <h1>Command Center</h1>
   <div class="hero-sub">项目、服务、研究，一目了然。</div>
   <div class="global-search">
-    <input type="text" id="global-search-input" placeholder="搜索笔记、研究、看板..." autocomplete="off">
+    <input type="text" id="global-search-input" placeholder="搜索文档、知识库、看板..." autocomplete="off">
     <div class="search-results" id="search-results"></div>
   </div>
 </div>
@@ -305,7 +306,7 @@
     <a class="quick-pill" href="/docs"><span class="qp-icon">📚</span>文档中心</a>
     <a class="quick-pill" href="https://github.com/NewDynasty"><span class="qp-icon">🐙</span>GitHub</a>
     <a class="quick-pill" href="/knowledge"><span class="qp-icon">🧠</span>知识库</a>
-    <a class="quick-pill" href="/api/usage"><span class="qp-icon">📊</span>用量</a>
+    <a class="quick-pill" href="/usage"><span class="qp-icon">📊</span>用量</a>
   </div>
 </div>
 
@@ -751,14 +752,40 @@ document.getElementById('global-search-input').addEventListener('input',function
   if(!q||q.length<2){box.className='search-results';box.innerHTML='';return;}
   _searchTimer=setTimeout(async()=>{
     try{
-      const r=await fetch('/api/docs/search?q='+encodeURIComponent(q));
-      const data=await r.json();
-      if(!data.length){box.innerHTML='<div class="sr-item"><div class="sr-title" style="color:#888">无结果</div></div>';box.className='search-results open';return;}
-      box.innerHTML=data.slice(0,10).map(d=>
-        '<a class="sr-item" href="/docs/'+d.path+'">'+
-        '<div class="sr-folder">'+d.folder+'</div>'+
-        '<div class="sr-title">'+d.title+'</div></a>'
-      ).join('');
+      // Fetch both docs and knowledge in parallel
+      const [docsRes, knRes] = await Promise.allSettled([
+        fetch('/api/docs/search?q='+encodeURIComponent(q)),
+        fetch('/api/knowledge/search?q='+encodeURIComponent(q)+'&limit=5')
+      ]);
+      var html = '';
+      // Docs results
+      if(docsRes.status==='fulfilled'){
+        const data=await docsRes.value.json();
+        if(data.length){
+          html += '<div class="sr-item" style="padding:6px 16px;font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.5px;pointer-events:none">📄 文档</div>';
+          html += data.slice(0,6).map(d=>
+            '<a class="sr-item" href="/docs/'+d.path+'">'+
+            '<div class="sr-folder">'+d.folder+'</div>'+
+            '<div class="sr-title">'+d.title+'</div></a>'
+          ).join('');
+        }
+      }
+      // Knowledge results
+      if(knRes.status==='fulfilled'){
+        const kdata=await knRes.value.json();
+        if(kdata.length){
+          html += '<div class="sr-item" style="padding:6px 16px;font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.5px;pointer-events:none;border-top:1px solid rgba(0,0,0,.05)">🧠 知识库</div>';
+          html += kdata.slice(0,5).map(k=>
+            '<a class="sr-item" href="/knowledge" onclick="localStorage.setItem(\'k-search\',\''+k.title.replace(/'/g,"\\'")+'\')">'+
+            '<div class="sr-folder">'+(k.project||k.type||'')+'</div>'+
+            '<div class="sr-title">'+k.title+'</div></a>'
+          ).join('');
+        }
+      }
+      if(!html){
+        html='<div class="sr-item"><div class="sr-title" style="color:#888">无结果</div></div>';
+      }
+      box.innerHTML=html;
       box.className='search-results open';
     }catch(e){console.error(e);}
   },300);

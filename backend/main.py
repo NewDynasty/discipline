@@ -466,6 +466,13 @@ def serve_portal():
         return FileResponse(html_path)
     return JSONResponse({"error": "Portal not found"}, status_code=404)
 
+@app.get("/usage")
+@app.get("/usage/")
+def serve_usage():
+  html_path = os.path.join(PORTAL_DIR, "usage.html")
+  if os.path.exists(html_path):
+    return FileResponse(html_path)
+  return JSONResponse({"error": "Usage page not found"}, status_code=404)
 
 # --- Docs API ---
 
