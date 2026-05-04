@@ -197,6 +197,16 @@
 [data-theme="dark"] .search-results{background:#1e1e2e;box-shadow:0 8px 30px rgba(0,0,0,.4);}
 [data-theme="dark"] .sr-item:hover{background:rgba(0,113,227,.15);}
 [data-theme="dark"] .sr-folder{color:#666;}
+.checkin-bar{max-width:980px;margin:0 auto;padding:14px 22px;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.7);border-radius:14px;border:1px solid rgba(0,0,0,.06);margin-top:14px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}
+.cb-left{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:500;}
+.cb-icon{font-size:20px;}
+.cb-btn{background:#111;color:#fff;border:none;padding:8px 28px;border-radius:20px;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit;}
+.cb-btn:hover{background:#0071e3;transform:scale(1.03);}
+.cb-btn:disabled{background:#ccc;cursor:default;transform:none;}
+.cb-done{color:#34c759;font-weight:600;}
+[data-theme="dark"] .checkin-bar{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.08);}
+[data-theme="dark"] .cb-btn{background:#f59e0b;color:#0a0a0f;}
+@media(max-width:768px){.checkin-bar{margin:10px 16px 0;padding:12px 16px;border-radius:12px;}.cb-btn{padding:10px 32px;font-size:16px;}}
 </style>
 </head>
 <body>
@@ -253,6 +263,14 @@
     <input type="text" id="global-search-input" placeholder="搜索笔记、研究、看板..." autocomplete="off">
     <div class="search-results" id="search-results"></div>
   </div>
+</div>
+
+<div class="checkin-bar" id="checkin-bar">
+  <div class="cb-left">
+    <span class="cb-icon">☀️</span>
+    <span id="cb-status">加载中...</span>
+  </div>
+  <button class="cb-btn" id="cb-btn" onclick="doQuickCheckin()" style="display:none">打卡</button>
 </div>
 
 <div class="status" id="status-bar"></div>
@@ -553,6 +571,20 @@ async function load(){
     if(el)el.textContent='早起打卡追踪。连续 '+er.streak+' 天达标，共 '+er.total+' 次打卡';
   }
 
+  // Checkin bar status
+  try{
+    const today=await api('/api/checkin/today');
+    const statusEl=document.getElementById('cb-status');
+    const btn=document.getElementById('cb-btn');
+    if(today&&today.date){
+      statusEl.innerHTML='今日 <span class="cb-done">'+today.wake_time+'</span> 已打卡 · 连续 '+((er&&er.streak)||'?')+' 天';
+      btn.style.display='none';
+    }else{
+      statusEl.textContent='今日尚未打卡';
+      btn.style.display='inline-block';
+    }
+  }catch(e){document.getElementById('cb-status').textContent='打卡状态未知';}
+
   // Projects (API-driven)
   renderProjects(projects);
 
@@ -613,6 +645,24 @@ async function renderCron(){
         '</div>';
     }).join('');
   }catch(e){console.error(e);}
+}
+
+async function doQuickCheckin(){
+  const token=localStorage.getItem('cc_token');
+  if(!token){showToast('请先登录','error');return;}
+  const btn=document.getElementById('cb-btn');
+  btn.disabled=true;btn.textContent='打卡中...';
+  const now=new Date();
+  const time=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  try{
+    const r=await fetch('/api/checkin',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({wake_time:time})});
+    const d=await r.json();
+    if(r.ok){
+      document.getElementById('cb-status').innerHTML='今日 <span class="cb-done">'+time+'</span> 已打卡 ✓';
+      btn.style.display='none';
+      showToast('打卡成功 '+time,'ok');
+    }else{showToast(d.detail||'打卡失败','error');btn.disabled=false;btn.textContent='打卡';}
+  }catch(e){showToast('网络错误','error');btn.disabled=false;btn.textContent='打卡';}
 }
 
 async function triggerCron(id,name){
