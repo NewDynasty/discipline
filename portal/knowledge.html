@@ -245,7 +245,7 @@ let currentItems = [];
 
 // Theme handled by shared-nav.js
 
-function tick(){var d=new Date();document.getElementById('clock').textContent=d.toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false})}
+function tick(){var el=document.getElementById('clock');if(!el)return;var d=new Date();el.textContent=d.toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false})}
 tick();setInterval(tick,1000);
 
 // Tabs
