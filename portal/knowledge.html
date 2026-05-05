@@ -11,18 +11,7 @@
   html{scroll-behavior:smooth}
   body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;background:#fff;color:#1d1d1f;-webkit-font-smoothing:antialiased}
 
-  /* NAV */
-  .nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.82);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid rgba(0,0,0,.06);height:48px;display:flex;align-items:center;justify-content:center}
-  .nav-inner{max-width:980px;width:100%;padding:0 22px;display:flex;justify-content:space-between;align-items:center}
-  .nav-brand{font-size:14px;font-weight:700;letter-spacing:-.3px;color:#1d1d1f;text-decoration:none}
-  .nav-links{display:flex;gap:24px}
-  .nav-clock{font-size:12.5px;color:#aeaeb2;font-variant-numeric:tabular-nums}
-  .nav-links a{font-size:13.5px;color:#86868b;text-decoration:none;letter-spacing:-.1px}
-  .nav-links a:hover{color:#1d1d1f}
-  .nav-links a.active{color:#1d1d1f;font-weight:600}
-  .theme-toggle{background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;display:flex;align-items:center;justify-content:center;transition:background .15s}
-  .theme-toggle:hover{background:#f5f5f7}
-  .theme-toggle svg{width:18px;height:18px;color:#86868b}
+  /* NAV — handled by shared-nav.js */
 
   /* HERO */
   .hero{text-align:center;padding:60px 22px 40px;max-width:980px;margin:0 auto}
@@ -98,18 +87,6 @@
 
   /* ========== DARK THEME ========== */
   [data-theme="dark"] body{background:#0a0a0f;color:#e2e8f0}
-  [data-theme="dark"] .nav{background:rgba(10,10,15,.9);border-bottom-color:#1e293b}
-  [data-theme="dark"] .nav-brand{color:#e2e8f0}
-  [data-theme="dark"] .nav-links a{color:#94a3b8}
-  [data-theme="dark"] .nav-links a:hover{color:#e2e8f0}
-  [data-theme="dark"] .nav-links a.active{color:#e2e8f0}
-  [data-theme="dark"] .theme-toggle:hover{background:#1e293b}
-  [data-theme="dark"] .theme-toggle svg{color:#94a3b8}
-  [data-theme="dark"] .nav-clock{color:#64748b}
-  [data-theme="dark"] .nav-hamburger span{background:#e2e8f0}
-  [data-theme="dark"] .nav-mobile{background:rgba(10,10,15,.96);border-bottom-color:#1e293b}
-  [data-theme="dark"] .nav-mobile a{color:#e2e8f0;border-bottom-color:#1e293b}
-
   [data-theme="dark"] .hero-sub{color:#94a3b8}
   [data-theme="dark"] .tab-btn{background:#1e293b;color:#94a3b8}
   [data-theme="dark"] .tab-btn:hover{background:#334155;color:#e2e8f0}
@@ -186,21 +163,11 @@
   .nav-mobile{display:none}
   @media(max-width:768px){
     .nav-links{display:none}
-    .nav-inner{padding:0 16px}
-    .nav-hamburger{display:flex;flex-direction:column;gap:4px;background:none;border:none;cursor:pointer;padding:4px}
-    .nav-hamburger span{display:block;width:18px;height:1.5px;background:#1d1d1f;border-radius:2px;transition:all .2s}
-    .nav-menu-open .nav-hamburger span:nth-child(1){transform:rotate(45deg) translate(3px,3px)}
-    .nav-menu-open .nav-hamburger span:nth-child(2){opacity:0}
-    .nav-menu-open .nav-hamburger span:nth-child(3){transform:rotate(-45deg) translate(3px,-3px)}
-    .nav-mobile{display:none;position:absolute;top:48px;left:0;right:0;background:rgba(255,255,255,.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(0,0,0,.06);padding:12px 22px;z-index:99}
-    .nav-menu-open .nav-mobile{display:flex;flex-direction:column;gap:4px}
-    .nav-mobile a{font-size:15px;color:#1d1d1f;text-decoration:none;padding:12px 0;border-bottom:1px solid rgba(0,0,0,.06);display:block}
-    .nav-mobile a:last-child{border-bottom:none}
   }
 </style>
 </head>
 <body>
-<script src="/static/shared-nav.js?v=3"></script>
+<script src="/static/shared-nav.js?v=5"></script>
 <div class="hero">
   <h1>知识库</h1>
   <p class="hero-sub">搜索资产、查看决策、跟踪专家和黑板</p>
