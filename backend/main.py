@@ -138,7 +138,7 @@ except (ImportError, ModuleNotFoundError):
 
 if _KNOWLEDGE_AVAILABLE:
     _kr = _APIRouter(prefix="/api/knowledge", tags=["knowledge"])
-    _HERMES_HOME = Path("~/.hermes").expanduser()
+    _HERMES_HOME = Path(os.environ.get("HERMES_HOME", str(Path("~/.hermes").expanduser()))).resolve()
     _REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 
     _k_cache: list = []
