@@ -8,7 +8,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy app code
 COPY backend/main.py .
+COPY backend/deps.py .
 COPY backend/graph.py .
+COPY backend/routers/ ./routers/
 COPY portal/ /portal/
 
 # Create data dir
