@@ -9,14 +9,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy app code
 COPY backend/main.py .
 COPY backend/graph.py .
-COPY portal/ ./portal/
+COPY portal/ /portal/
 
 # Create data dir
 RUN mkdir -p /app/data
 
 # Env defaults
 ENV EARLY_RISE_DB=/app/data/earlyrise.db
-ENV EARLY_RISE_STATIC=./portal
+ENV EARLY_RISE_STATIC=/portal
 ENV OBSIDIAN_VAULT=/vault
 ENV PORT=8899
 
