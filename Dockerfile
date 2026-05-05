@@ -10,6 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/main.py .
 COPY backend/deps.py .
 COPY backend/graph.py .
+COPY backend/knowledge_lite.py .
 COPY backend/routers/ ./routers/
 COPY portal/ /portal/
 

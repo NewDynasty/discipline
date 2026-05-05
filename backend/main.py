@@ -125,11 +125,11 @@ try:
 except ImportError:
     pass
 
-# --- Knowledge API (conditional, needs hermes_cli) ---
+# --- Knowledge API (standalone lite, no hermes_cli needed) ---
 import sys as _sys
 _KNOWLEDGE_AVAILABLE = False
 try:
-    from hermes_cli import knowledge as _k
+    import knowledge_lite as _k
     from fastapi import APIRouter as _APIRouter
     _KNOWLEDGE_AVAILABLE = True
 except (ImportError, ModuleNotFoundError):
@@ -139,7 +139,7 @@ except (ImportError, ModuleNotFoundError):
 if _KNOWLEDGE_AVAILABLE:
     _kr = _APIRouter(prefix="/api/knowledge", tags=["knowledge"])
     _HERMES_HOME = Path("~/.hermes").expanduser()
-    _REPO_ROOT = Path(_k.__file__).resolve().parent.parent.parent
+    _REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 
     _k_cache: list = []
     _k_cache_ts: float = 0.0
