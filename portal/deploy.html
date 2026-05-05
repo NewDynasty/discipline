@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deploy · Command Center</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#fff;--fg:#1d1d1f;--muted:#86868b;--accent:#0071e3;--card:#f5f5f7;--border:#e5e5ea;--green:#34c759;--red:#ff3b30;--orange:#ff9500;--code-bg:#f0f0f3}
+[data-theme="dark"]{--bg:#0a0a0a;--fg:#f5f5f7;--muted:#98989d;--card:#1c1c1e;--border:#2c2c2e;--accent:#0a84ff;--code-bg:#1c1c1e}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-serif;background:var(--bg);color:var(--fg);min-height:100vh}
+
+/* Nav */
+.nav{height:48px;display:flex;align-items:center;padding:0 20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:100;gap:16px}
+.nav-brand{font-weight:700;font-size:15px;text-decoration:none;color:var(--fg)}
+.nav-links{display:flex;gap:14px;margin-left:8px}
+.nav-link{font-size:13px;color:var(--muted);text-decoration:none;padding:4px 8px;border-radius:6px;transition:all .15s}
+.nav-link:hover,.nav-link.active{color:var(--fg);background:var(--card)}
+.nav-spacer{flex:1}
+.nav-btn{background:none;border:none;font-size:16px;cursor:pointer;color:var(--fg);padding:4px 8px;border-radius:6px}
+.nav-btn:hover{background:var(--card)}
+
+/* Layout */
+.container{max-width:860px;margin:0 auto;padding:32px 20px}
+.page-title{font-size:28px;font-weight:700;margin-bottom:4px}
+.page-desc{font-size:14px;color:var(--muted);margin-bottom:28px}
+
+/* Service Cards */
+.service-card{background:var(--card);border-radius:12px;padding:20px;margin-bottom:16px;border:1px solid var(--border);transition:all .15s}
+.service-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.service-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.service-info{flex:1}
+.service-name{font-size:16px;font-weight:600}
+.service-meta{font-size:12px;color:var(--muted);display:flex;gap:12px;margin-top:2px}
+.service-status{font-size:12px;padding:3px 10px;border-radius:20px;font-weight:500}
+.status-running{background:rgba(52,199,89,.12);color:var(--green)}
+.status-stopped{background:rgba(255,59,48,.1);color:var(--red)}
+.status-deploying{background:rgba(255,149,0,.12);color:var(--orange)}
+
+/* Version Section */
+.version-section{border-top:1px solid var(--border);padding-top:14px;margin-top:14px}
+.version-current{display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:13px}
+.version-current code{background:var(--code-bg);padding:2px 8px;border-radius:4px;font-size:12px;font-family:'SF Mono',Menlo,monospace}
+.version-label{color:var(--muted);font-size:12px}
+
+/* Commit History */
+.commit-list{max-height:200px;overflow-y:auto;margin-bottom:14px;border:1px solid var(--border);border-radius:8px}
+.commit-item{display:flex;align-items:center;gap:10px;padding:8px 12px;font-size:12px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
+.commit-item:last-child{border-bottom:none}
+.commit-item:hover{background:var(--bg)}
+.commit-item.selected{background:rgba(0,113,227,.08);border-left:3px solid var(--accent)}
+.commit-hash{font-family:'SF Mono',Menlo,monospace;color:var(--accent);font-weight:500;min-width:68px}
+.commit-msg{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--fg)}
+.commit-time{color:var(--muted);font-size:11px;white-space:nowrap}
+
+/* Deploy Actions */
+.deploy-actions{display:flex;gap:10px;align-items:center}
+.btn{padding:8px 18px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{opacity:.85}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--fg)}
+.btn-outline:hover{background:var(--card)}
+.btn-danger{background:var(--red);color:#fff}
+.btn-danger:hover{opacity:.85}
+.deploy-hint{font-size:11px;color:var(--muted)}
+
+/* Deploy Log */
+.deploy-log{margin-top:14px;border-top:1px solid var(--border);padding-top:14px}
+.log-box{background:var(--code-bg);border-radius:8px;padding:12px;font-family:'SF Mono',Menlo,monospace;font-size:11px;line-height:1.6;max-height:240px;overflow-y:auto;color:var(--muted)}
+.log-box .log-ok{color:var(--green)}
+.log-box .log-err{color:var(--red)}
+.log-box .log-info{color:var(--accent)}
+.log-box .log-warn{color:var(--orange)}
+
+/* Progress Bar */
+.deploy-progress{height:4px;background:var(--border);border-radius:2px;margin:10px 0;overflow:hidden}
+.deploy-progress-bar{height:100%;background:var(--accent);border-radius:2px;transition:width .3s;width:0}
+
+/* Responsive */
+@media(max-width:768px){
+  .container{padding:20px 16px}
+  .page-title{font-size:22px}
+  .service-header{flex-wrap:wrap}
+  .deploy-actions{flex-wrap:wrap}
+  .commit-msg{max-width:120px}
+}
+[data-theme="dark"] .log-box{background:#111}
+[data-theme="dark"] .commit-item.selected{background:rgba(10,132,255,.12)}
+</style>
+</head>
+<body>
+<script src="/static/shared-nav.js?v=5"></script>
+
+  <button class="nav-btn" id="theme-toggle">🌓</button>
+</div>
+
+<div class="container">
+  <div class="page-title">部署中心</div>
+  <div class="page-desc">一键拉取 GitHub 最新代码并部署到 ECS，支持指定版本回滚。</div>
+
+  <!-- Service: Discipline -->
+  <div class="service-card" id="svc-discipline">
+    <div class="service-header">
+      <div class="service-icon" style="background:rgba(0,113,227,.12)">☀️</div>
+      <div class="service-info">
+        <div class="service-name">Discipline</div>
+        <div class="service-meta">
+          <span>ECS · 47.108.143.237:8899</span>
+          <span>Docker · python:3.11-slim</span>
+          <span>/opt/discipline-git</span>
+        </div>
+      </div>
+      <span class="service-status status-running">● 运行中</span>
+    </div>
+
+    <div class="version-section">
+      <div class="version-current">
+        <span class="version-label">当前版本</span>
+        <code id="current-hash">d0e8de7</code>
+        <span class="version-label" id="current-msg">feat: replace usage page with models page</span>
+        <span class="version-label" id="current-time">2 分钟前</span>
+      </div>
+
+      <!-- Commit History (collapsed by default) -->
+      <div id="commit-section" style="display:none">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:6px">选择部署版本（点击选中，再点部署）</div>
+        <div class="commit-list" id="commit-list">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <div class="deploy-actions">
+        <button class="btn btn-primary" id="btn-deploy-latest" onclick="deploy('latest')">🚀 部署最新版</button>
+        <button class="btn btn-outline" id="btn-select-version" onclick="toggleCommits()">📋 选择版本</button>
+        <button class="btn btn-outline" id="btn-deploy-selected" style="display:none" onclick="deploy('selected')" disabled>⬆️ 部署选中版本</button>
+        <button class="btn btn-outline" onclick="checkStatus()">🔍 检查状态</button>
+        <span class="deploy-hint" id="deploy-hint"></span>
+      </div>
+
+      <div class="deploy-progress" id="progress-bar" style="display:none">
+        <div class="deploy-progress-bar" id="progress-fill"></div>
+      </div>
+
+      <div class="deploy-log" id="log-section" style="display:none">
+        <div class="log-box" id="log-box"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// --- Theme ---
+const saved=localStorage.getItem('cc-theme')||'light';
+document.documentElement.setAttribute('data-theme',saved);
+document.getElementById('theme-toggle').onclick=()=>{
+  const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',t);
+  localStorage.setItem('cc-theme',t);
+};
+
+// --- State ---
+let selectedHash=null;
+let deploying=false;
+
+// --- API Config ---
+const API_BASE = '/api/deploy';
+const TOKEN = localStorage.getItem('deploy-token') || prompt('请输入 Deploy Token:');
+if(TOKEN) localStorage.setItem('deploy-token', TOKEN);
+
+async function api(path, opts={}) {
+  const res = await fetch(API_BASE + path, {
+    ...opts,
+    headers: { 'Authorization': 'Bearer ' + TOKEN, 'Content-Type': 'application/json', ...opts.headers }
+  });
+  if(res.status === 401) { localStorage.removeItem('deploy-token'); location.reload(); }
+  if(!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+// --- Load Status on Page Load ---
+async function loadStatus() {
+  try {
+    const d = await api('/deploy/status');
+    const badge = document.querySelector('.service-status');
+    if(d.container.running) {
+      badge.className = 'service-status status-running';
+      badge.textContent = '● 运行中';
+    } else {
+      badge.className = 'service-status status-stopped';
+      badge.textContent = '● 已停止';
+    }
+    if(d.commit) {
+      document.getElementById('current-hash').textContent = d.commit.hash;
+      document.getElementById('current-msg').textContent = d.commit.message;
+      document.getElementById('current-time').textContent = d.commit.time;
+    }
+  } catch(e) { console.error('Status load failed:', e); }
+}
+loadStatus();
+
+// --- Toggle commit list ---
+function toggleCommits(){
+  const sec=document.getElementById('commit-section');
+  const btn=document.getElementById('btn-select-version');
+  const deploySel=document.getElementById('btn-deploy-selected');
+  if(sec.style.display==='none'){
+    sec.style.display='block';
+    btn.textContent='📋 收起';
+    renderCommits();
+  }else{
+    sec.style.display='none';
+    btn.textContent='📋 选择版本';
+    deploySel.style.display='none';
+    selectedHash=null;
+  }
+}
+
+async function renderCommits(){
+  const list=document.getElementById('commit-list');
+  list.innerHTML='<div style="padding:12px;color:var(--muted);font-size:12px">加载中...</div>';
+  try{
+    const d=await api('/deploy/commits?count=10');
+    list.innerHTML=d.commits.map(c=>`
+      <div class="commit-item" data-hash="${c.hash}" onclick="selectCommit('${c.hash}',this)">
+        <span class="commit-hash">${c.hash.slice(0,7)}</span>
+        <span class="commit-msg">${escHtml(c.message)}</span>
+        <span class="commit-time">${c.time}</span>
+      </div>
+    `).join('');
+  }catch(e){ list.innerHTML='<div style="padding:12px;color:var(--red);font-size:12px">加载失败: '+e.message+'</div>'; }
+}
+function escHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+function selectCommit(hash,el){
+  document.querySelectorAll('.commit-item').forEach(x=>x.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedHash=hash;
+  const btn=document.getElementById('btn-deploy-selected');
+  btn.style.display='inline-block';
+  btn.disabled=false;
+  btn.textContent=`⬆️ 部署 ${hash.slice(0,7)}`;
+}
+
+// --- Deploy ---
+async function deploy(mode){
+  if(deploying)return;
+  deploying=true;
+  const hash=mode==='selected'?selectedHash:'latest';
+  if(mode==='selected'&&!hash){alert('请先选择一个版本');deploying=false;return;}
+
+  const btnLatest=document.getElementById('btn-deploy-latest');
+  const btnSelected=document.getElementById('btn-deploy-selected');
+  const hint=document.getElementById('deploy-hint');
+  const progressBar=document.getElementById('progress-bar');
+  const progressFill=document.getElementById('progress-fill');
+  const logSection=document.getElementById('log-section');
+  const logBox=document.getElementById('log-box');
+
+  btnLatest.disabled=true;
+  if(btnSelected)btnSelected.disabled=true;
+  hint.textContent='';
+  logBox.innerHTML='';
+  logSection.style.display='block';
+  progressBar.style.display='block';
+  progressFill.style.width='0%';
+
+  appendLog(`🚀 开始部署 ref=${hash==='latest'?'origin/main':hash}`, 'info');
+
+  try {
+    const result = await api('/deploy/run', {
+      method: 'POST',
+      body: JSON.stringify({ ref: hash })
+    });
+
+    // Poll status until done
+    let done = false;
+    while(!done) {
+      await sleep(2000);
+      progressFill.style.width = Math.min(90, parseInt(progressFill.style.width) + 10) + '%';
+      try {
+        const s = await api('/deploy/status');
+        if(!s.deploying) { done = true; }
+      } catch(e) { done = true; }
+    }
+
+    progressFill.style.width = '100%';
+
+    // Reload to get final result
+    try {
+      const final = await api('/deploy/status');
+      if(final.last_result) {
+        if(final.last_result.steps) {
+          final.last_result.steps.forEach(s => appendLog(s.message, s.ok ? 'ok' : 'err'));
+        }
+      }
+    } catch(e) {}
+
+    appendLog('✅ 部署完成！', 'ok');
+    hint.textContent = '✅ 部署完成';
+    await loadStatus();
+  } catch(e) {
+    progressFill.style.width = '100%';
+    appendLog('❌ ' + e.message, 'err');
+    hint.textContent = '❌ 部署失败';
+  }
+
+  btnLatest.disabled=false;
+  if(btnSelected)btnSelected.disabled=false;
+  deploying=false;
+}
+
+function appendLog(text,type=''){
+  const box=document.getElementById('log-box');
+  const cls=type==='ok'?'log-ok':type==='err'?'log-err':type==='warn'?'log-warn':'log-info';
+  box.innerHTML+=`<div class="${cls}">${text}</div>`;
+  box.scrollTop=box.scrollHeight;
+}
+
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+
+// --- Check Status ---
+async function checkStatus(){
+  const logBox=document.getElementById('log-box');
+  logBox.innerHTML='';
+  document.getElementById('log-section').style.display='block';
+  appendLog('--- 状态检查 ---','info');
+  try{
+    const d=await api('/deploy/status');
+    appendLog(`Container: ${d.container.status} ${d.container.running?'✅':'❌'}`,d.container.running?'ok':'err');
+    appendLog(`Disk: ${d.resource.disk}`,'ok');
+    appendLog(`Memory: ${d.resource.memory}`,'ok');
+    if(d.commit) appendLog(`Version: ${d.commit.hash} ${d.commit.message}`,'ok');
+    if(d.deploying) appendLog('⚠️ 正在部署中...','warn');
+  }catch(e){ appendLog('❌ '+e.message,'err'); }
+}
+</script>
+</body>
+</html>
