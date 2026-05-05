@@ -10,7 +10,7 @@ from fastapi import APIRouter
 
 router = APIRouter()
 
-VAULT_ROOT = os.path.normpath(os.path.expanduser("~/Documents/Obsidian Vault"))
+VAULT_ROOT = os.environ.get("OBSIDIAN_VAULT", os.path.normpath(os.path.expanduser("~/Documents/Obsidian Vault")))
 
 # Dirs to scan (relative to vault root)
 SCAN_DIRS = ["Bookmarks", "Kanban", "Notes", "People", "Research", "TaskLog", "Workspace"]
