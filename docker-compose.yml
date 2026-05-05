@@ -8,7 +8,7 @@ services:
     environment:
       - EARLY_RISE_TOKEN=${DISCIPLINE_TOKEN:-changeme}
       - EARLY_RISE_DB=/app/data/earlyrise.db
-      - EARLY_RISE_STATIC=./portal
+      - EARLY_RISE_STATIC=/portal
       - OBSIDIAN_VAULT=/vault
     volumes:
       - ./data:/app/data
