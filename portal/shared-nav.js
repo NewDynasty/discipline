@@ -12,7 +12,7 @@
     {href:'/portal#quick',label:'\u5feb\u901f\u8bbf\u95ee'},
     {href:'/docs',label:'\ud83d\udcda \u6587\u6863'},
     {href:'/knowledge',label:'\ud83e\udde0 \u77e5\u8bc6\u5e93'},
-    {href:'/usage',label:'\ud83d\udcca \u7528\u91cf'},
+    {href:'/models',label:'\ud83e\udd16 \u6a21\u578b'},
   ];
   const cur=location.pathname.replace(/\/$/,'');
   // Remove existing nav if any (to avoid duplicates)
