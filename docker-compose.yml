@@ -10,6 +10,8 @@ services:
       - EARLY_RISE_DB=/app/data/earlyrise.db
       - EARLY_RISE_STATIC=/portal
       - OBSIDIAN_VAULT=/vault
+      - HERMES_HOME=/hermes-home
     volumes:
       - ./data:/app/data
       - ${OBSIDIAN_VAULT_PATH:-~/Documents/Obsidian Vault}:/vault:ro
+      - /opt/hermes-data:/hermes-home:ro
