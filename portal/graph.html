@@ -10,18 +10,6 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #0a0a0f; color: #e2e8f0; font-family: Inter, -apple-system, sans-serif; overflow: hidden; height: 100vh; }
 
-  /* Top bar */
-  .topbar {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-    height: 48px; background: rgba(10,10,15,0.9); backdrop-filter: blur(12px);
-    border-bottom: 1px solid #1e293b;
-    display: flex; align-items: center; padding: 0 20px; gap: 16px;
-  }
-  .topbar a { color: #94a3b8; text-decoration: none; font-size: 13px; font-weight: 500; }
-  .topbar a:hover { color: #f59e0b; }
-  .topbar .sep { color: #334155; }
-  .topbar .current { color: #f59e0b; }
-
   /* Controls */
   .controls {
     position: fixed; top: 56px; right: 16px; z-index: 100;
@@ -47,7 +35,7 @@
   .folder-btn:hover, .folder-btn.active { border-color: #f59e0b; color: #f59e0b; }
 
   /* Graph container */
-  #graph { width: 100vw; height: 100vh; }
+  #graph { width: 100vw; height: calc(100vh - 48px); }
 
   /* Tooltip */
   .tooltip {
@@ -81,9 +69,6 @@
   }
 
   @media(max-width:768px){
-    .topbar{padding:0 12px;gap:10px}
-    .topbar a,.topbar .current{font-size:12px}
-
     /* Controls: collapsible panel */
     .controls-toggle{display:block}
     .controls{
@@ -104,20 +89,12 @@
     .loading{font-size:13px}
 
     /* Ensure graph fills all space */
-    #graph{width:100vw;height:100vh}
+    #graph{width:100vw;height:calc(100vh - 48px)}
   }
 
   /* ========== Light theme ========== */
   [data-theme="light"] body { background: #ffffff; color: #1d1d1f; }
 
-  [data-theme="light"] .topbar {
-    background: rgba(255,255,255,0.92);
-    border-bottom-color: #e5e5ea;
-  }
-  [data-theme="light"] .topbar a { color: #86868b; }
-  [data-theme="light"] .topbar a:hover { color: #0071e3; }
-  [data-theme="light"] .topbar .sep { color: #d1d1d6; }
-  [data-theme="light"] .topbar .current { color: #0071e3; }
 
   [data-theme="light"] .controls {
     background: rgba(245,245,247,0.96);
@@ -218,7 +195,7 @@
 </style>
 </head>
 <body>
-<script src="/static/shared-nav.js?v=5"></script>
+<script src="/static/shared-nav.js?v=6"></script>
 <button class="controls-toggle" id="controlsToggle" onclick="document.getElementById('controlsPanel').classList.toggle('open')">☰</button>
 
 <div class="controls" id="controlsPanel">

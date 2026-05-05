@@ -20,16 +20,17 @@
 [data-theme="dark"] .nav a{color:#94a3b8}[data-theme="dark"] .nav a:hover{color:#f59e0b}
 [data-theme="dark"] .nav-brand{color:#e2e8f0!important}
 .nav-inner{display:flex;align-items:center;gap:24px;max-width:1100px;margin:0 auto;width:100%}
-.theme-toggle{background:none;border:1px solid rgba(0,0,0,.12);border-radius:8px;padding:4px 12px;cursor:pointer;font-size:14px;color:#86868b}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.theme-toggle{background:none;border:1px solid rgba(0,0,0,.12);border-radius:8px;padding:5px 12px;cursor:pointer;font-size:13px;color:#86868b;line-height:1.3}
 [data-theme="dark"] .theme-toggle{border-color:#334155;color:#94a3b8}
 .nav-hamburger{display:none;background:none;border:none;font-size:20px;cursor:pointer;color:#86868b;padding:4px 8px}
-.nav-auth-btn{background:none;border:1px solid rgba(0,0,0,.12);border-radius:8px;padding:4px 12px;cursor:pointer;font-size:13px;color:#86868b;transition:all .15s}
+.nav-auth-btn{background:none;border:1px solid rgba(0,0,0,.12);border-radius:8px;padding:5px 12px;cursor:pointer;font-size:13px;color:#86868b;transition:all .15s;line-height:1.3;white-space:nowrap}
 .nav-auth-btn:hover{border-color:#0071e3;color:#0071e3}
 .nav-auth-btn.logged-in{border-color:#30d158;color:#30d158;font-weight:500}
 [data-theme="dark"] .nav-auth-btn{border-color:#334155;color:#94a3b8}
 [data-theme="dark"] .nav-auth-btn:hover{border-color:#f59e0b;color:#f59e0b}
 [data-theme="dark"] .nav-auth-btn.logged-in{border-color:#4ade80;color:#4ade80}
-@media(max-width:640px){.nav{padding:10px 16px}.nav-inner{gap:0;flex-wrap:wrap}.nav-inner .nav-link{display:none}.nav-inner.open .nav-link{display:block;width:100%;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.06)}.nav-hamburger{display:block;margin-left:auto}[data-theme="dark"] .nav-inner .nav-link{border-bottom-color:#1e293b}}
+@media(max-width:640px){.nav{padding:10px 16px}.nav-inner{gap:0;flex-wrap:wrap}.nav-inner .nav-link{display:none}.nav-inner.open .nav-link{display:block;width:100%;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.06)}.nav-hamburger{display:block}[data-theme="dark"] .nav-inner .nav-link{border-bottom-color:#1e293b}}
 
 /* Login overlay */
 .login-overlay{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);opacity:0;pointer-events:none;transition:opacity .25s}
@@ -89,12 +90,16 @@
     inner.appendChild(a);
   });
 
+  // Right side container (theme + auth + hamburger)
+  const right=document.createElement('div');
+  right.className='nav-right';
+
   // Hamburger
   const burger=document.createElement('button');
   burger.className='nav-hamburger';
   burger.textContent='\u2630';
   burger.onclick=function(){inner.classList.toggle('open')};
-  inner.appendChild(burger);
+  right.appendChild(burger);
 
   // Theme toggle
   const themeBtn=document.createElement('button');
@@ -106,12 +111,14 @@
     d.setAttribute('data-theme',isDark?'light':'dark');
     localStorage.setItem('cc_theme',isDark?'light':'dark');
   };
-  inner.appendChild(themeBtn);
+  right.appendChild(themeBtn);
 
   // Auth button
   const authBtn=document.createElement('button');
   authBtn.className='nav-auth-btn';
-  inner.appendChild(authBtn);
+  right.appendChild(authBtn);
+
+  inner.appendChild(right);
 
   nav.appendChild(inner);
   document.body.insertBefore(nav,document.body.firstChild);

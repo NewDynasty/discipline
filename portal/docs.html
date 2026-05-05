@@ -94,12 +94,38 @@
   .bl-link{display:block;padding:10px 14px;background:#f5f5f7;border-radius:10px;text-decoration:none;color:#1d1d1f;margin-bottom:6px;transition:background .12s}
   .bl-link:hover{background:#e8e8ed}
 
+  /* Mobile sidebar toggle button */
+  .mobile-sidebar-btn{display:none;position:fixed;bottom:20px;left:20px;z-index:300;width:48px;height:48px;border-radius:50%;background:#0071e3;color:#fff;border:none;font-size:20px;box-shadow:0 4px 16px rgba(0,113,227,.35);cursor:pointer;transition:transform .2s,background .2s}
+  .mobile-sidebar-btn:hover{transform:scale(1.08)}
+  .mobile-sidebar-btn:active{transform:scale(.95)}
+  .sidebar-overlay{display:none;position:fixed;inset:0;top:48px;background:rgba(0,0,0,.3);z-index:190;-webkit-tap-highlight-color:transparent}
+  .sidebar-overlay.show{display:block}
+
   @media(max-width:768px){
-    .sidebar{display:none;position:fixed;top:48px;left:0;width:280px;height:calc(100vh - 48px);background:#fff;z-index:200;box-shadow:4px 0 24px rgba(0,0,0,.12)}
+    .mobile-sidebar-btn{display:flex;align-items:center;justify-content:center}
+    .sidebar{display:none;position:fixed;top:48px;left:0;width:100%;max-width:320px;height:calc(100vh - 48px);background:#fff;z-index:200;box-shadow:4px 0 24px rgba(0,0,0,.12);padding-top:12px}
     .sidebar.show{display:block}
-    .content{padding:24px 22px 60px}
-    .doc-title{font-size:28px}
+    .sidebar.show~.sidebar-overlay{display:block}
+    .content{padding:20px 16px 80px}
+    .doc-title{font-size:26px;letter-spacing:-.8px}
+    .md h1{font-size:24px}
+    .md h2{font-size:20px}
+    .md h3{font-size:17px}
+    .md p,.md ul,.md ol{font-size:14.5px;line-height:1.75}
+    .md code{font-size:12px;word-break:break-word}
+    .md pre{font-size:12px;padding:14px;border-radius:8px}
+    .md table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .breadcrumb{font-size:12px;word-break:break-all}
+    .doc-meta{gap:8px}
+    .sb-item{padding:10px 12px;font-size:14px;min-height:44px;display:flex;align-items:center}
+    .sb-folder{padding:12px 10px 6px;font-size:14px}
+    .search-box{margin:0 10px 16px}
+    .search-box input{padding:12px 14px 12px 38px;font-size:16px/* prevent iOS zoom */}
   }
+
+  /* Dark theme for mobile */
+  [data-theme="dark"] .mobile-sidebar-btn{background:#f59e0b;color:#0a0a0f;box-shadow:0 4px 16px rgba(245,158,11,.35)}
+  [data-theme="dark"] .sidebar-overlay{background:rgba(0,0,0,.5)}
 
   /* Back button */
   .back-btn{display:inline-flex;align-items:center;gap:6px;color:#0071e3;text-decoration:none;font-size:13px;font-weight:500;padding:6px 12px;border-radius:8px;transition:background .15s;margin-bottom:8px}
@@ -150,7 +176,9 @@
 </style>
 </head>
 <body>
-<script src="/static/shared-nav.js?v=5"></script>
+<script src="/static/shared-nav.js?v=6"></script>
+<button class="mobile-sidebar-btn" id="mobile-sidebar-btn">☰</button>
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
 <div class="layout">
   <div class="sidebar" id="sidebar">
     <div class="search-box">
@@ -268,6 +296,8 @@ async function loadDoc(path){
 
   // Update URL hash
   window.location.hash=path.replace('.md','');
+  // Close mobile sidebar after selecting a doc
+  closeMobileSidebar();
 }
 
 function formatTitle(t){
@@ -347,19 +377,43 @@ function loadFirstDoc(){
   }
 }
 
+// Mobile sidebar
+function closeMobileSidebar(){
+  document.getElementById('sidebar').classList.remove('show');
+  document.getElementById('sidebar-overlay').classList.remove('show');
+}
+function openMobileSidebar(){
+  document.getElementById('sidebar').classList.add('show');
+  document.getElementById('sidebar-overlay').classList.add('show');
+}
+
 document.addEventListener('DOMContentLoaded',async()=>{
   // Theme handled by shared-nav.js
 
-  const mobileToggle=document.getElementById('mobile-toggle');
-  if(mobileToggle) mobileToggle.onclick=function(){
-    this.classList.toggle('active');
-    document.getElementById('sidebar').classList.toggle('show');
-  };
+  // Mobile sidebar toggle
+  const mobileBtn=document.getElementById('mobile-sidebar-btn');
+  const sidebarOverlay=document.getElementById('sidebar-overlay');
+  if(mobileBtn){
+    mobileBtn.onclick=function(){
+      const sb=document.getElementById('sidebar');
+      const isOpen=sb.classList.toggle('show');
+      sidebarOverlay.classList.toggle('show',isOpen);
+    };
+  }
+  if(sidebarOverlay){
+    sidebarOverlay.onclick=closeMobileSidebar;
+  }
 
   await loadTree();
-  handleHash();
-  if(!window.location.hash.slice(1)){
-    loadFirstDoc();
+  const isMobile=window.innerWidth<=768;
+  if(isMobile&&!window.location.hash.slice(1)){
+    // Mobile: auto-open sidebar as file browser, skip loading first doc
+    openMobileSidebar();
+  }else{
+    handleHash();
+    if(!window.location.hash.slice(1)){
+      loadFirstDoc();
+    }
   }
 });
 
