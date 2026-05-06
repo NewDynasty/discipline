@@ -115,6 +115,41 @@ def get_heatmap(_=Depends(verify_token)):
 def serve_index():
     return RedirectResponse(url="/portal")
 
+# --- Hotspot reverse proxy (Datasette) ---
+# Cloud: Nginx intercepts /hotspot/ first, this is a no-op fallback
+# Local: FastAPI proxies /hotspot/ to a local Datasette instance
+_HOTSPOT_UPSTREAM = os.environ.get("HOTSPOT_UPSTREAM", "http://localhost:8200")
+
+@app.api_route("/hotspot/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"])
+async def hotspot_proxy(path: str, request: Request):
+    import httpx
+    target = f"{_HOTSPOT_UPSTREAM}/{path}"
+    if request.url.query:
+        target += f"?{request.url.query}"
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.request(
+                method=request.method,
+                url=target,
+                headers={k: v for k, v in request.headers.items() if k.lower() not in ("host",)},
+                content=await request.body(),
+            )
+            return Response(
+                content=resp.content,
+                status_code=resp.status_code,
+                headers=dict(resp.headers),
+            )
+    except (httpx.ConnectError, httpx.TimeoutException):
+        return JSONResponse(
+            {"error": "Datasette service unavailable", "upstream": _HOTSPOT_UPSTREAM},
+            status_code=502,
+        )
+
+@app.get("/hotspot")
+@app.get("/hotspot/")
+async def hotspot_root(request: Request):
+    return await hotspot_proxy("", request)
+
 # --- Static files ---
 app.mount("/static", StaticFiles(directory=PORTAL_DIR), name="static")
 
