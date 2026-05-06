@@ -123,7 +123,8 @@ _HOTSPOT_UPSTREAM = os.environ.get("HOTSPOT_UPSTREAM", "http://localhost:8200")
 @app.api_route("/hotspot/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"])
 async def hotspot_proxy(path: str, request: Request):
     import httpx
-    target = f"{_HOTSPOT_UPSTREAM}/{path}"
+    # Pass full path with /hotspot prefix so --base-url Datasette generates correct links
+    target = f"{_HOTSPOT_UPSTREAM}/hotspot/{path}"
     if request.url.query:
         target += f"?{request.url.query}"
     try:
