@@ -142,11 +142,48 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-s
 let selectedHash=null;
 let deploying=false;
 
-// --- API Config (uses Portal JWT from shared-nav.js) ---
+// --- API Config ---
+// Deploy page uses its own deploy_token (separate from cc_token)
 const API_BASE='/api/deploy';
 function getAuthHeaders(){
-  const t=localStorage.getItem('cc_token');
-  return {'Authorization':'Bearer '+(t||''),'Content-Type':'application/json'};
+  const t=localStorage.getItem('deploy_token')||localStorage.getItem('cc_token')||'';
+  return {'Authorization':'Bearer '+t,'Content-Type':'application/json'};
+}
+
+function showPasswordModal(){
+  return new Promise(resolve=>{
+    // If modal already exists, reuse it
+    let modal=document.getElementById('pw-modal');
+    if(modal){modal.style.display='flex';return;}
+    modal=document.createElement('div');
+    modal.id='pw-modal';
+    modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:9999';
+    modal.innerHTML=`
+      <div style="background:var(--card);border-radius:16px;padding:32px;width:340px;border:1px solid var(--border)">
+        <div style="font-size:18px;font-weight:600;margin-bottom:8px">🔐 部署认证</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:16px">请输入部署密码以继续</div>
+        <input type="password" id="pw-input" placeholder="部署密码"
+          style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--fg);font-size:14px;margin-bottom:16px;outline:none">
+        <div id="pw-error" style="font-size:12px;color:var(--red);margin-bottom:8px;display:none"></div>
+        <div style="display:flex;gap:10px">
+          <button id="pw-cancel" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--fg);cursor:pointer">取消</button>
+          <button id="pw-ok" style="flex:1;padding:10px;border-radius:8px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-weight:500">确认</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    const inp=document.getElementById('pw-input');
+    const err=document.getElementById('pw-error');
+    inp.focus();
+    inp.onkeydown=e=>{if(e.key==='Enter')document.getElementById('pw-ok').click();};
+    document.getElementById('pw-cancel').onclick=()=>{modal.style.display='none';resolve(null);};
+    document.getElementById('pw-ok').onclick=()=>{
+      const v=inp.value.trim();
+      if(!v){err.textContent='请输入密码';err.style.display='block';return;}
+      localStorage.setItem('deploy_token',v);
+      modal.style.display='none';
+      resolve(v);
+    };
+  });
 }
 
 async function api(path,opts={}){
@@ -154,7 +191,22 @@ async function api(path,opts={}){
     ...opts,
     headers:{...getAuthHeaders(),...opts.headers}
   });
-  if(res.status===401){location.reload();}
+  if(res.status===401){
+    // Try getting deploy_token from user instead of infinite reload
+    const token=await showPasswordModal();
+    if(!token) throw new Error('需要部署密码');
+    // Retry with new token
+    const res2=await fetch(API_BASE+path,{
+      ...opts,
+      headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json',...opts.headers}
+    });
+    if(res2.status===401){
+      localStorage.removeItem('deploy_token');
+      throw new Error('密码错误，请重试');
+    }
+    if(!res2.ok)throw new Error(await res2.text());
+    return res2.json();
+  }
   if(!res.ok)throw new Error(await res.text());
   return res.json();
 }
@@ -176,7 +228,10 @@ async function loadStatus(){
       document.getElementById('current-msg').textContent=d.commit.message;
       document.getElementById('current-time').textContent=d.commit.time;
     }
-  }catch(e){console.error('Status load failed:',e);}
+  }catch(e){
+    console.error('Status load failed:',e);
+    document.getElementById('current-msg').textContent='认证失败，请点击任意操作按钮输入密码';
+  }
 }
 loadStatus();
 
