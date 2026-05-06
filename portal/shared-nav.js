@@ -5,6 +5,8 @@
   if(!t){const alt=localStorage.getItem('cc-theme')||localStorage.getItem('docs-theme');if(alt){localStorage.setItem('cc_theme',alt);localStorage.removeItem('cc-theme');localStorage.removeItem('docs-theme');t=alt}}
   if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches)){
     document.documentElement.setAttribute('data-theme','dark');
+  } else {
+    document.documentElement.setAttribute('data-theme','light');
   }
 
   // ── Inject CSS ──
