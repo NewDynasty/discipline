@@ -72,6 +72,7 @@
     {href:'/models',label:'\ud83e\udd16 \u6a21\u578b'},
     {href:'/graph',label:'\ud83d\udd79\ufe0f \u56fe\u8c31'},
     {href:'/deploy',label:'\ud83d\ude80 \u90e8\u7f72'},
+    {href:'/static/hotspot.html',label:'\uD83D\uDD25 \u70ED\u70B9'},
   ];
   const cur=location.pathname.replace(/\/$/,'');
   const old=document.querySelector('.nav');
