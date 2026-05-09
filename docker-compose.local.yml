@@ -1,0 +1,64 @@
+# docker-compose.local.yml — 本地局域网部署（微服务架构）
+# 源码开发走 LaunchAgent 8898，局域网访问走 Docker 8899
+# 加子系统：在 services 下新增即可，加入 cc-network
+#
+# 用法:
+#   docker compose -f docker-compose.local.yml up -d --build
+#   docker compose -f docker-compose.local.yml logs -f discipline
+
+services:
+  # ── 门户（Discipline Command Center）──────────────────────
+  discipline:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cc-discipline
+    restart: unless-stopped
+    ports:
+      - "8899:8899"
+    environment:
+      - EARLY_RISE_TOKEN=${EARLYRISE_TOKEN:-earlyrise2026}
+      - EARLY_RISE_DB=/app/data/earlyrise.db
+      - OBSIDIAN_VAULT=/vault
+      - HERMES_HOME=/hermes-home
+      # Datasette 在同网络用服务名访问
+      - HOTSPOT_UPSTREAM=http://datasette:8200
+    volumes:
+      - discipline-data:/app/data
+      - ${OBSIDIAN_VAULT_PATH:-~/Documents/Obsidian Vault}:/vault:ro
+      - ${HERMES_HOME:-~/.hermes}:/hermes-home:ro
+    depends_on:
+      datasette:
+        condition: service_started
+    networks:
+      - cc-network
+
+  # ── 热点数据（Datasette）─────────────────────────────────
+  datasette:
+    build:
+      context: ./docker/datasette
+      dockerfile: Dockerfile
+    container_name: cc-datasette
+    restart: unless-stopped
+    # 不对外暴露端口，只走 discipline 反代
+    # 如需直连调试可取消注释:
+    # ports:
+    #   - "8200:8200"
+    expose:
+      - "8200"
+    volumes:
+      - ${HOTSPOT_DB_PATH:-~/.hermes/scripts/media-crawler/hotspot.db}:/data/hotspot.db:ro
+    command: >
+      /data/hotspot.db
+      --port 8200
+      --cors
+      --setting sql_time_limit_ms 10000
+    networks:
+      - cc-network
+
+volumes:
+  discipline-data:
+
+networks:
+  cc-network:
+    name: cc-network
