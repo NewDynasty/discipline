@@ -194,3 +194,22 @@ def _calc_streak() -> int:
         elif d < expected:
             break
     return streak
+
+# --- Environment detection ---
+def detect_env() -> dict:
+    """Unified runtime environment check. Call once at startup if needed."""
+    import importlib
+    env = {
+        "is_cloud": not os.path.exists("/Users/"),
+        "has_vault": os.path.isdir(OBSIDIAN_VAULT),
+    }
+    # Check optional module availability
+    for mod in ("knowledge_lite", "graph", "httpx"):
+        try:
+            importlib.import_module(mod)
+            env[f"has_{mod}"] = True
+        except ImportError:
+            env[f"has_{mod}"] = False
+    return env
+
+ENV = detect_env()

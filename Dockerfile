@@ -13,6 +13,7 @@ COPY backend/graph.py .
 COPY backend/knowledge_lite.py .
 COPY backend/routers/ ./routers/
 COPY portal/ /portal/
+COPY portal/portal-registry.yaml /portal/portal-registry.yaml
 
 # Create data dir
 RUN mkdir -p /app/data
