@@ -23,6 +23,7 @@ services:
       - HERMES_HOME=/hermes-home
       # Datasette 在同网络用服务名访问
       - HOTSPOT_UPSTREAM=http://datasette:8200
+      - PROXY_UPSTREAM_HOTSPOT=http://datasette:8200
     volumes:
       - discipline-data:/app/data
       - ${OBSIDIAN_VAULT_PATH:-~/Documents/Obsidian Vault}:/vault:ro
@@ -48,11 +49,17 @@ services:
       - "8200"
     volumes:
       - ${HOTSPOT_DB_PATH:-~/.hermes/scripts/media-crawler/hotspot.db}:/data/hotspot.db:ro
-    command: >
-      /data/hotspot.db
-      --port 8200
-      --cors
-      --setting sql_time_limit_ms 10000
+    command:
+      - datasette
+      - /data/hotspot.db
+      - --host
+      - "0.0.0.0"
+      - --port
+      - "8200"
+      - --cors
+      - --setting
+      - sql_time_limit_ms
+      - "10000"
     networks:
       - cc-network
 

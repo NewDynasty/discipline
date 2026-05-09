@@ -54,7 +54,7 @@ if _HTTPX_AVAILABLE:
     # Register proxy routes from registry
     for _sys in _PROXY_SYSTEMS:
         _path = _sys["path"].rstrip("/")
-        _upstream = _sys["proxy"]
+        _upstream = os.environ.get(f"PROXY_UPSTREAM_{_sys['id'].upper()}", _sys["proxy"])
         _handler = _make_proxy_handler(_upstream, _path)
 
         # Catch-all proxy route: /hotspot/{path}
