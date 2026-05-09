@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>系统总览 · Command Center</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="stylesheet" href="/static/cc-styles.css">
+<script src="/static/shared-nav.js"></script>
+<script src="/static/cc-components.js"></script>
+<style>
+  /* 页面特有样式 — 只写这里 */
+  .sys-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+  .sys-card{padding:22px;background:#f5f5f7;border-radius:16px;transition:all .15s;position:relative}
+  .sys-card:hover{background:#e8e8ed;transform:translateY(-1px)}
+  .sys-head{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+  .sys-icon{font-size:28px;width:48px;height:48px;background:#fff;border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+  .sys-name{font-size:16px;font-weight:700;letter-spacing:-.3px}
+  .sys-path{font-size:12px;color:#86868b;font-family:monospace}
+  .sys-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .sys-tag{font-size:10.5px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.04);color:#86868b}
+  .sys-auth{font-size:10.5px;padding:2px 8px;border-radius:6px;background:#fff4e0;color:#c88200}
+  .sys-status{position:absolute;top:16px;right:16px}
+  [data-theme="dark"] .sys-card{background:#1e293b}
+  [data-theme="dark"] .sys-card:hover{background:#334155}
+  [data-theme="dark"] .sys-icon{background:#0a0a0f;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+  [data-theme="dark"] .sys-tag{background:rgba(255,255,255,.06)}
+</style>
+</head>
+<body>
+
+<div class="cc-hero">
+  <h1>系统总览</h1>
+  <p class="cc-hero-sub">所有注册子系统的运行状态</p>
+</div>
+
+<div class="cc-divider"></div>
+
+<div class="cc-section">
+  <div id="systems"></div>
+</div>
+
+<div class="cc-divider"></div>
+
+<div class="cc-section">
+  <div class="cc-sec-head">
+    <div class="cc-eyebrow">基础设施</div>
+    <div class="cc-sec-title">服务状态</div>
+  </div>
+  <div id="services" class="cc-row-list"></div>
+</div>
+
+<footer class="cc-footer">Command Center ·  Powered by portal-registry.yaml</footer>
+
+<script>
+async function load(){
+  const el=document.getElementById('systems');
+  const svcEl=document.getElementById('services');
+
+  // Load systems
+  el.innerHTML='<div class="sys-grid">'+Array(7).fill(CC.skeleton('100%','100px')).join('')+'</div>';
+  try{
+    const r=await CC.fetch('/api/portal/systems');
+    const systems=await r.json();
+    el.innerHTML='<div class="sys-grid">'+systems.map(s=>`
+      <div class="sys-card">
+        <div class="sys-status">${s.has_page?CC.badge('页面就绪','on'):CC.badge('无页面','off')}</div>
+        <div class="sys-head">
+          <div class="sys-icon">${s.icon||'📦'}</div>
+          <div>
+            <div class="sys-name">${s.name}</div>
+            <div class="sys-path">${s.path}</div>
+          </div>
+        </div>
+        <div class="sys-meta">
+          <span class="sys-tag">ID: ${s.id}</span>
+          ${s.auth_level?'<span class="sys-auth">🔒 '+s.auth_level+'</span>':''}
+          ${s.has_proxy?'<span class="sys-tag">↗ 反代</span>':''}
+        </div>
+      </div>
+    `).join('')+'</div>';
+  }catch(e){el.innerHTML='<p>加载失败</p>'}
+
+  // Load services
+  try{
+    const r=await CC.fetch('/api/portal/status');
+    const services=await r.json();
+    svcEl.innerHTML=services.map(s=>`
+      <div class="cc-row">
+        <div class="cc-row-icon">${CC.dot(s.online)}</div>
+        <div class="cc-row-body">
+          <div class="cc-row-title">${s.name}</div>
+          <div class="cc-row-desc">${s.category||''}</div>
+        </div>
+        <div class="cc-row-meta">
+          ${CC.badge(s.online?'在线':'离线',s.online?'on':'off')}
+          <div style="font-size:12px;color:#aeaeb2;margin-top:2px">:${s.port}${s.latency_ms?' · '+s.latency_ms+'ms':''}</div>
+        </div>
+      </div>
+    `).join('');
+  }catch(e){}
+}
+load();
+setInterval(load,30000);
+</script>
+</body>
+</html>

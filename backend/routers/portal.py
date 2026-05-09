@@ -221,6 +221,10 @@ def _register_page_routes():
         # Skip docs (has its own SPA routing with /docs/{path})
         if sys_cfg.get("id") == "docs":
             continue
+        # Skip systems with proxy — their /path routes are handled by main.py reverse proxy,
+        # static page served via /static/{html} only
+        if sys_cfg.get("proxy"):
+            continue
 
         html_path = os.path.join(PORTAL_DIR, html_file)
         route_name = f"serve_{sys_cfg['id']}"

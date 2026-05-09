@@ -128,7 +128,7 @@ async def hotspot_proxy(path: str, request: Request):
     if request.url.query:
         target += f"?{request.url.query}"
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
             resp = await client.request(
                 method=request.method,
                 url=target,
@@ -137,14 +137,6 @@ async def hotspot_proxy(path: str, request: Request):
             )
             resp_headers = {k: v for k, v in resp.headers.items()
                            if k.lower() not in ("content-encoding", "transfer-encoding", "content-length")}
-            # Rewrite redirect Location so browser stays on our origin
-            # instead of looping back through the proxy
-            if resp.status_code in (301, 302, 303, 307, 308) and "location" in resp_headers:
-                loc = resp_headers["location"]
-                # Rewrite upstream host to our host, keep path
-                if loc.startswith(_HOTSPOT_UPSTREAM):
-                    loc = loc[len(_HOTSPOT_UPSTREAM):]
-                resp_headers["location"] = loc
             return Response(
                 content=resp.content,
                 status_code=resp.status_code,
@@ -157,6 +149,13 @@ async def hotspot_proxy(path: str, request: Request):
         )
 
 @app.get("/hotspot")
+async def hotspot_page():
+    """Serve the hotspot shell page (iframe container)."""
+    html_path = os.path.join(PORTAL_DIR, "hotspot.html")
+    if os.path.exists(html_path):
+        return FileResponse(html_path, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
+    return JSONResponse({"error": "hotspot.html not found"}, status_code=404)
+
 @app.get("/hotspot/")
 async def hotspot_root(request: Request):
     return await hotspot_proxy("", request)
