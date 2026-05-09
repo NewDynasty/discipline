@@ -1,45 +1,54 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Discipline ECS 部署架构</title>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+  <link rel="stylesheet" href="/static/cc-styles.css">
+  <script src="/static/shared-nav.js?v=7"></script>
+  <script src="/static/cc-components.js"></script>
   <style>
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:'JetBrains Mono',monospace;background:#020617;min-height:100vh;padding:2rem;color:#fff}
-    .container{max-width:1100px;margin:0 auto}
-    .header{margin-bottom:2rem}
-    .header-row{display:flex;align-items:center;gap:1rem;margin-bottom:.5rem}
-    .pulse-dot{width:12px;height:12px;background:#22d3ee;border-radius:50%;animation:pulse 2s infinite}
+    /* 页面特有样式 — 只写这里 */
+
+    /* 字体覆盖: 本页使用 JetBrains Mono */
+    body{font-family:'JetBrains Mono',monospace}
+
+    /* Hero 微调 */
+    .cc-hero h1{font-size:1.5rem;letter-spacing:0;font-weight:700}
+    .cc-hero-sub{font-size:.875rem;margin-left:0;margin-top:4px}
+
+    /* 脉冲点 */
+    .pulse-dot{width:12px;height:12px;background:#22d3ee;border-radius:50%;animation:pulse 2s infinite;display:inline-block;vertical-align:middle;margin-right:8px}
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
-    h1{font-size:1.5rem;font-weight:700}
-    .subtitle{color:#94a3b8;font-size:.875rem;margin-left:1.75rem}
-    .diagram-container{background:rgba(15,23,42,.5);border-radius:1rem;border:1px solid #1e293b;padding:1.5rem;overflow-x:auto}
-    svg{width:100%;min-width:1000px;display:block}
+
+    /* 架构图容器 */
+    .diagram-container{background:rgba(15,23,42,.5);border-radius:1rem;border:1px solid #1e293b;padding:1.5rem;overflow-x:auto;margin:1.5rem 0}
+    .diagram-container svg{width:100%;min-width:1000px;display:block}
+
+    /* 卡片网格: auto-fit 三列 */
     .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;margin-top:2rem}
+
+    /* 单个卡片 — 深色风格 */
     .card{background:rgba(15,23,42,.5);border-radius:.75rem;border:1px solid #1e293b;padding:1.25rem}
     .card-header{display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem}
-    .card-dot{width:8px;height:8px;border-radius:50%}
+    .card-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
     .card-dot.cyan{background:#22d3ee}
     .card-dot.emerald{background:#34d399}
     .card-dot.amber{background:#fbbf24}
-    .card h3{font-size:.875rem;font-weight:600}
+    .card h3{font-size:.875rem;font-weight:600;color:#e2e8f0}
     .card ul{list-style:none;color:#94a3b8;font-size:.75rem}
     .card li{margin-bottom:.375rem}
-    .footer{text-align:center;margin-top:1.5rem;color:#475569;font-size:.75rem}
   </style>
 </head>
 <body>
-<div class="container">
-  <div class="header">
-    <div class="header-row">
-      <div class="pulse-dot"></div>
-      <h1>Discipline · ECS 部署架构</h1>
-    </div>
-    <p class="subtitle">本地 Mac ↔ 阿里云 ECS (47.108.143.237) 双向交互</p>
-  </div>
 
+<div class="cc-hero">
+  <h1><span class="pulse-dot"></span>Discipline · ECS 部署架构</h1>
+  <p class="cc-hero-sub">本地 Mac ↔ 阿里云 ECS (47.108.143.237) 双向交互</p>
+</div>
+
+<div class="cc-section">
   <div class="diagram-container">
     <svg viewBox="0 0 1100 720">
       <defs>
@@ -252,8 +261,9 @@
       </ul>
     </div>
   </div>
-
-  <p class="footer">Discipline ECS Architecture · 2026-05-05 · 2C2G Alibaba Cloud Linux 3</p>
 </div>
+
+<footer class="cc-footer">Discipline ECS Architecture · 2026-05-05 · 2C2G Alibaba Cloud Linux 3</footer>
+
 </body>
 </html>

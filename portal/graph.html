@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Graph — Command Center</title>
 <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="stylesheet" href="/static/cc-styles.css">
 <style>
-  @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #0a0a0f; color: #e2e8f0; font-family: Inter, -apple-system, sans-serif; overflow: hidden; height: 100vh; }
+  /* Page-specific body overrides (reset & font provided by cc-styles.css) */
+  body { overflow: hidden; height: 100vh; }
 
   /* Controls */
   .controls {
@@ -92,9 +92,8 @@
     #graph{width:100vw;height:calc(100vh - 48px)}
   }
 
-  /* ========== Light theme ========== */
+  /* ========== Light theme (page-specific overrides) ========== */
   [data-theme="light"] body { background: #ffffff; color: #1d1d1f; }
-
 
   [data-theme="light"] .controls {
     background: rgba(245,245,247,0.96);
@@ -195,7 +194,8 @@
 </style>
 </head>
 <body>
-<script src="/static/shared-nav.js?v=6"></script>
+<script src="/static/shared-nav.js?v=7"></script>
+<script src="/static/cc-components.js"></script>
 <button class="controls-toggle" id="controlsToggle" onclick="document.getElementById('controlsPanel').classList.toggle('open')">☰</button>
 
 <div class="controls" id="controlsPanel">
@@ -247,7 +247,7 @@ function mutedColor() { return isLight() ? '#86868b' : '#64748b'; }
 
 async function init() {
   try {
-    const resp = await fetch("/api/docs/graph");
+    const resp = await CC.fetch("/api/docs/graph");
     allData = await resp.json();
     document.getElementById("loading").style.display = "none";
     updateStats(allData.nodes.length, allData.edges.length);
@@ -257,6 +257,7 @@ async function init() {
     renderGraph(allData);
   } catch (e) {
     document.getElementById("loading").innerHTML = '😕 加载失败: ' + e.message;
+    CC.toast('加载图谱失败: ' + e.message, 'error');
   }
 }
 
@@ -347,7 +348,7 @@ function makeVisEdge(e) {
     link:    { color: light ? "rgba(100,116,139,0.40)" : "rgba(100,116,139,0.30)", highlight: hlColor(), hover: hlColor() },
     tag:     { color: light ? "rgba(59,130,246,0.40)"  : "rgba(59,130,246,0.30)",  highlight: "#3b82f6", hover: "#3b82f6" },
     keyword: { color: light ? "rgba(16,185,129,0.35)"  : "rgba(16,185,129,0.25)",  highlight: "#10b981", hover: "#10b981" },
-    folder:  { color: light ? "rgba(100,116,139,0.12)" : "rgba(100,116,139,0.08)", highlight: "#64748b", hover: "#64748b" },
+    folder:  { color: light ? "rgba(100,116,139,0.12)" : "rgba(100,100,139,0.08)", highlight: "#64748b", hover: "#64748b" },
   };
   const ec = EDGE_COLORS[e.type] || EDGE_COLORS.link;
   return {

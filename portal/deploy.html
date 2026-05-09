@@ -5,86 +5,94 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Deploy · Command Center</title>
 <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="stylesheet" href="/static/cc-styles.css">
+<script src="/static/cc-components.js"></script>
+<script src="/static/shared-nav.js?v=7"></script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#fff;--fg:#1d1d1f;--muted:#86868b;--accent:#0071e3;--card:#f5f5f7;--border:#e5e5ea;--green:#34c759;--red:#ff3b30;--orange:#ff9500;--code-bg:#f0f0f3}
-[data-theme="dark"]{--bg:#0a0a0a;--fg:#f5f5f7;--muted:#98989d;--card:#1c1c1e;--border:#2c2c2e;--accent:#0a84ff;--code-bg:#1c1c1e}
-body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-serif;background:var(--bg);color:var(--fg);min-height:100vh}
+/* ═══ Page-specific styles ═══ */
 
-/* Layout */
-.container{max-width:860px;margin:0 auto;padding:32px 20px}
-.page-title{font-size:28px;font-weight:700;margin-bottom:4px}
-.page-desc{font-size:14px;color:var(--muted);margin-bottom:28px}
+/* Hero / page header */
+.deploy-hero{padding:60px 22px 20px;max-width:860px;margin:0 auto}
+.deploy-hero h1{font-size:28px;font-weight:700;margin-bottom:4px}
+.deploy-hero p{font-size:14px;color:#86868b}
 
 /* Service Cards */
-.service-card{background:var(--card);border-radius:12px;padding:20px;margin-bottom:16px;border:1px solid var(--border);transition:all .15s}
+.service-card{background:#f5f5f7;border-radius:12px;padding:20px;margin-bottom:16px;border:1px solid #e5e5ea;transition:all .15s}
 .service-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
 .service-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
 .service-info{flex:1}
 .service-name{font-size:16px;font-weight:600}
-.service-meta{font-size:12px;color:var(--muted);display:flex;gap:12px;margin-top:2px;flex-wrap:wrap}
+.service-meta{font-size:12px;color:#86868b;display:flex;gap:12px;margin-top:2px;flex-wrap:wrap}
 .service-status{font-size:12px;padding:3px 10px;border-radius:20px;font-weight:500;white-space:nowrap}
-.status-running{background:rgba(52,199,89,.12);color:var(--green)}
-.status-stopped{background:rgba(255,59,48,.1);color:var(--red)}
-.status-deploying{background:rgba(255,149,0,.12);color:var(--orange)}
+.status-running{background:rgba(52,199,89,.12);color:#34c759}
+.status-stopped{background:rgba(255,59,48,.1);color:#ff3b30}
+.status-deploying{background:rgba(255,149,0,.12);color:#ff9500}
 
 /* Version Section */
-.version-section{border-top:1px solid var(--border);padding-top:14px;margin-top:14px}
+.version-section{border-top:1px solid #e5e5ea;padding-top:14px;margin-top:14px}
 .version-current{display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:13px;flex-wrap:wrap}
-.version-current code{background:var(--code-bg);padding:2px 8px;border-radius:4px;font-size:12px;font-family:'SF Mono',Menlo,monospace}
-.version-label{color:var(--muted);font-size:12px}
+.version-current code{background:var(--code-bg,#f0f0f3);padding:2px 8px;border-radius:4px;font-size:12px;font-family:'SF Mono',Menlo,monospace}
+.version-label{color:#86868b;font-size:12px}
 
 /* Commit History */
-.commit-list{max-height:200px;overflow-y:auto;margin-bottom:14px;border:1px solid var(--border);border-radius:8px}
-.commit-item{display:flex;align-items:center;gap:10px;padding:8px 12px;font-size:12px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
+.commit-list{max-height:200px;overflow-y:auto;margin-bottom:14px;border:1px solid #e5e5ea;border-radius:8px}
+.commit-item{display:flex;align-items:center;gap:10px;padding:8px 12px;font-size:12px;border-bottom:1px solid #e5e5ea;cursor:pointer;transition:background .1s}
 .commit-item:last-child{border-bottom:none}
-.commit-item:hover{background:var(--bg)}
-.commit-item.selected{background:rgba(0,113,227,.08);border-left:3px solid var(--accent)}
-.commit-hash{font-family:'SF Mono',Menlo,monospace;color:var(--accent);font-weight:500;min-width:68px}
-.commit-msg{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--fg)}
-.commit-time{color:var(--muted);font-size:11px;white-space:nowrap}
+.commit-item:hover{background:#fff}
+.commit-item.selected{background:rgba(0,113,227,.08);border-left:3px solid #0071e3}
+.commit-hash{font-family:'SF Mono',Menlo,monospace;color:#0071e3;font-weight:500;min-width:68px}
+.commit-msg{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.commit-time{color:#86868b;font-size:11px;white-space:nowrap}
 
 /* Deploy Actions */
 .deploy-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.btn{padding:8px 18px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s}
-.btn-primary{background:var(--accent);color:#fff}
-.btn-primary:hover{opacity:.85}
-.btn-primary:disabled{opacity:.4;cursor:not-allowed}
-.btn-outline{background:transparent;border:1px solid var(--border);color:var(--fg)}
-.btn-outline:hover{background:var(--card)}
-.btn-danger{background:var(--red);color:#fff}
-.btn-danger:hover{opacity:.85}
-.deploy-hint{font-size:11px;color:var(--muted)}
+.deploy-hint{font-size:11px;color:#86868b}
 
 /* Deploy Log */
-.deploy-log{margin-top:14px;border-top:1px solid var(--border);padding-top:14px}
-.log-box{background:var(--code-bg);border-radius:8px;padding:12px;font-family:'SF Mono',Menlo,monospace;font-size:11px;line-height:1.6;max-height:240px;overflow-y:auto;color:var(--muted)}
-.log-box .log-ok{color:var(--green)}
-.log-box .log-err{color:var(--red)}
-.log-box .log-info{color:var(--accent)}
-.log-box .log-warn{color:var(--orange)}
+.deploy-log{margin-top:14px;border-top:1px solid #e5e5ea;padding-top:14px}
+.log-box{background:#f0f0f3;border-radius:8px;padding:12px;font-family:'SF Mono',Menlo,monospace;font-size:11px;line-height:1.6;max-height:240px;overflow-y:auto;color:#86868b}
+.log-box .log-ok{color:#34c759}
+.log-box .log-err{color:#ff3b30}
+.log-box .log-info{color:#0071e3}
+.log-box .log-warn{color:#ff9500}
 
 /* Progress Bar */
-.deploy-progress{height:4px;background:var(--border);border-radius:2px;margin:10px 0;overflow:hidden}
-.deploy-progress-bar{height:100%;background:var(--accent);border-radius:2px;transition:width .3s;width:0}
+.deploy-progress{height:4px;background:#e5e5ea;border-radius:2px;margin:10px 0;overflow:hidden}
+.deploy-progress-bar{height:100%;background:#0071e3;border-radius:2px;transition:width .3s;width:0}
 
 /* Responsive */
 @media(max-width:768px){
-  .container{padding:20px 16px}
-  .page-title{font-size:22px}
+  .deploy-hero{padding:40px 16px 16px}
+  .deploy-hero h1{font-size:22px}
   .service-header{flex-wrap:wrap}
   .commit-msg{max-width:120px}
 }
-[data-theme="dark"] .log-box{background:#111}
+
+/* Dark theme overrides */
+[data-theme="dark"] .service-card{background:#1c1c1e;border-color:#2c2c2e}
+[data-theme="dark"] .service-icon{background:rgba(255,255,255,.06)}
+[data-theme="dark"] .version-section{border-top-color:#2c2c2e}
+[data-theme="dark"] .version-current code{background:#1c1c1e}
+[data-theme="dark"] .commit-list{border-color:#2c2c2e}
+[data-theme="dark"] .commit-item{border-bottom-color:#2c2c2e}
+[data-theme="dark"] .commit-item:hover{background:#0a0a0a}
 [data-theme="dark"] .commit-item.selected{background:rgba(10,132,255,.12)}
+[data-theme="dark"] .commit-hash{color:#0a84ff}
+[data-theme="dark"] .deploy-log{border-top-color:#2c2c2e}
+[data-theme="dark"] .log-box{background:#111}
+[data-theme="dark"] .deploy-progress{background:#2c2c2e}
+[data-theme="dark"] .status-running{background:rgba(52,199,89,.15);color:#30d158}
+[data-theme="dark"] .status-stopped{background:rgba(255,59,48,.15);color:#ff453a}
+[data-theme="dark"] .status-deploying{background:rgba(255,149,0,.15);color:#ff9f0a}
 </style>
 </head>
 <body>
-<script src="/static/shared-nav.js?v=6"></script>
 
-<div class="container">
-  <div class="page-title">部署中心</div>
-  <div class="page-desc">一键拉取 GitHub 最新代码并部署到 ECS，支持指定版本回滚。</div>
+<div class="cc-page">
+  <div class="deploy-hero">
+    <h1>部署中心</h1>
+    <p>一键拉取 GitHub 最新代码并部署到 ECS，支持指定版本回滚。</p>
+  </div>
 
   <!-- Service: Discipline -->
   <div class="service-card" id="svc-discipline">
@@ -111,17 +119,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-s
 
       <!-- Commit History (collapsed by default) -->
       <div id="commit-section" style="display:none">
-        <div style="font-size:12px;color:var(--muted);margin-bottom:6px">选择部署版本（点击选中，再点部署）</div>
+        <div style="font-size:12px;color:#86868b;margin-bottom:6px">选择部署版本（点击选中，再点部署）</div>
         <div class="commit-list" id="commit-list">
           <!-- Populated by JS -->
         </div>
       </div>
 
       <div class="deploy-actions">
-        <button class="btn btn-primary" id="btn-deploy-latest" onclick="deploy('latest')">🚀 部署最新版</button>
-        <button class="btn btn-outline" id="btn-select-version" onclick="toggleCommits()">📋 选择版本</button>
-        <button class="btn btn-outline" id="btn-deploy-selected" style="display:none" onclick="deploy('selected')" disabled>⬆️ 部署选中版本</button>
-        <button class="btn btn-outline" onclick="checkStatus()">🔍 检查状态</button>
+        <button class="cc-btn cc-btn-primary" id="btn-deploy-latest" onclick="deploy('latest')">🚀 部署最新版</button>
+        <button class="cc-btn cc-btn-secondary" id="btn-select-version" onclick="toggleCommits()">📋 选择版本</button>
+        <button class="cc-btn cc-btn-secondary" id="btn-deploy-selected" style="display:none" onclick="deploy('selected')" disabled>⬆️ 部署选中版本</button>
+        <button class="cc-btn cc-btn-secondary" onclick="checkStatus()">🔍 检查状态</button>
         <span class="deploy-hint" id="deploy-hint"></span>
       </div>
 
@@ -145,9 +153,11 @@ let deploying=false;
 // --- API Config ---
 // Deploy page uses its own deploy_token (separate from cc_token)
 const API_BASE='/api/deploy';
+function getDeployToken(){
+  return localStorage.getItem('deploy_token')||CC.getToken()||'';
+}
 function getAuthHeaders(){
-  const t=localStorage.getItem('deploy_token')||localStorage.getItem('cc_token')||'';
-  return {'Authorization':'Bearer '+t,'Content-Type':'application/json'};
+  return {'Authorization':'Bearer '+getDeployToken(),'Content-Type':'application/json'};
 }
 
 function showPasswordModal(){
@@ -159,15 +169,15 @@ function showPasswordModal(){
     modal.id='pw-modal';
     modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:9999';
     modal.innerHTML=`
-      <div style="background:var(--card);border-radius:16px;padding:32px;width:340px;border:1px solid var(--border)">
+      <div style="background:var(--bg,#fff);border-radius:16px;padding:32px;width:340px;border:1px solid #e5e5ea">
         <div style="font-size:18px;font-weight:600;margin-bottom:8px">🔐 部署认证</div>
-        <div style="font-size:13px;color:var(--muted);margin-bottom:16px">请输入部署密码以继续</div>
+        <div style="font-size:13px;color:#86868b;margin-bottom:16px">请输入部署密码以继续</div>
         <input type="password" id="pw-input" placeholder="部署密码"
-          style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--fg);font-size:14px;margin-bottom:16px;outline:none">
-        <div id="pw-error" style="font-size:12px;color:var(--red);margin-bottom:8px;display:none"></div>
+          style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid #e5e5ea;background:transparent;color:inherit;font-size:14px;margin-bottom:16px;outline:none">
+        <div id="pw-error" style="font-size:12px;color:#ff3b30;margin-bottom:8px;display:none"></div>
         <div style="display:flex;gap:10px">
-          <button id="pw-cancel" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--fg);cursor:pointer">取消</button>
-          <button id="pw-ok" style="flex:1;padding:10px;border-radius:8px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-weight:500">确认</button>
+          <button id="pw-cancel" class="cc-btn cc-btn-secondary" style="flex:1;border-radius:8px">取消</button>
+          <button id="pw-ok" class="cc-btn cc-btn-primary" style="flex:1;border-radius:8px">确认</button>
         </div>
       </div>`;
     document.body.appendChild(modal);
@@ -187,18 +197,18 @@ function showPasswordModal(){
 }
 
 async function api(path,opts={}){
-  const res=await fetch(API_BASE+path,{
+  const res=await CC.fetch(API_BASE+path,{
     ...opts,
-    headers:{...getAuthHeaders(),...opts.headers}
+    headers:{...getAuthHeaders(),...(opts.headers||{})}
   });
   if(res.status===401){
     // Try getting deploy_token from user instead of infinite reload
     const token=await showPasswordModal();
     if(!token) throw new Error('需要部署密码');
     // Retry with new token
-    const res2=await fetch(API_BASE+path,{
+    const res2=await CC.fetch(API_BASE+path,{
       ...opts,
-      headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json',...opts.headers}
+      headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json',...(opts.headers||{})}
     });
     if(res2.status===401){
       localStorage.removeItem('deploy_token');
@@ -254,7 +264,7 @@ function toggleCommits(){
 
 async function renderCommits(){
   const list=document.getElementById('commit-list');
-  list.innerHTML='<div style="padding:12px;color:var(--muted);font-size:12px">加载中...</div>';
+  list.innerHTML='<div style="padding:12px;color:#86868b;font-size:12px">加载中...</div>';
   try{
     const d=await api('/commits?count=10');
     list.innerHTML=d.commits.map(c=>`
@@ -264,7 +274,7 @@ async function renderCommits(){
         <span class="commit-time">${c.time}</span>
       </div>
     `).join('');
-  }catch(e){list.innerHTML='<div style="padding:12px;color:var(--red);font-size:12px">加载失败: '+e.message+'</div>';}
+  }catch(e){list.innerHTML='<div style="padding:12px;color:#ff3b30;font-size:12px">加载失败: '+e.message+'</div>';}
 }
 function escHtml(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 
@@ -283,7 +293,7 @@ async function deploy(mode){
   if(deploying)return;
   deploying=true;
   const hash=mode==='selected'?selectedHash:'latest';
-  if(mode==='selected'&&!hash){alert('请先选择一个版本');deploying=false;return;}
+  if(mode==='selected'&&!hash){CC.toast('请先选择一个版本','warn');deploying=false;return;}
 
   const btnLatest=document.getElementById('btn-deploy-latest');
   const btnSelected=document.getElementById('btn-deploy-selected');
@@ -304,7 +314,7 @@ async function deploy(mode){
   appendLog(`🚀 开始部署 ref=${hash==='latest'?'origin/main':hash}`,'info');
 
   try{
-    await api('/run',{method:'POST',body:JSON.stringify({ref:hash})});
+    await api('/run',{method:'POST',body:{ref:hash}});
 
     let done=false;
     while(!done){
@@ -327,11 +337,13 @@ async function deploy(mode){
 
     appendLog('✅ 部署完成！','ok');
     hint.textContent='✅ 部署完成';
+    CC.toast('部署完成','ok');
     await loadStatus();
   }catch(e){
     progressFill.style.width='100%';
     appendLog('❌ '+e.message,'err');
     hint.textContent='❌ 部署失败';
+    CC.toast('部署失败: '+e.message,'error');
   }
 
   btnLatest.disabled=false;

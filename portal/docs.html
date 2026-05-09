@@ -5,12 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Docs — Command Center</title>
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/cc-styles.css">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-  *{margin:0;padding:0;box-sizing:border-box}
-  html{scroll-behavior:smooth}
-  body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;background:#fff;color:#1d1d1f;-webkit-font-smoothing:antialiased}
-
   /* NAV — handled by shared-nav.js, only keep page-specific overrides */
   .sidebar{top:48px;height:calc(100vh - 48px)}
   .layout{min-height:calc(100vh - 48px)}
@@ -131,8 +127,7 @@
   .back-btn{display:inline-flex;align-items:center;gap:6px;color:#0071e3;text-decoration:none;font-size:13px;font-weight:500;padding:6px 12px;border-radius:8px;transition:background .15s;margin-bottom:8px}
   .back-btn:hover{background:#f5f5f7;text-decoration:none}
 
-  /* Dark theme */
-  [data-theme="dark"] body{background:#0a0a0f;color:#e2e8f0}
+  /* Dark theme — page-specific overrides (base body handled by cc-styles.css) */
   [data-theme="dark"] .sidebar{background:#0f172a;border-right-color:#1e293b}
   [data-theme="dark"] .sb-item{color:#e2e8f0}
   [data-theme="dark"] .sb-item:hover{background:#1e293b}
@@ -176,7 +171,8 @@
 </style>
 </head>
 <body>
-<script src="/static/shared-nav.js?v=6"></script>
+<script src="/static/cc-components.js"></script>
+<script src="/static/shared-nav.js?v=7"></script>
 <button class="mobile-sidebar-btn" id="mobile-sidebar-btn">☰</button>
 <div class="sidebar-overlay" id="sidebar-overlay"></div>
 <div class="layout">
@@ -205,7 +201,7 @@ async function api(path,params={},retries=2){
     try{
       const qs=new URLSearchParams(params).toString();
       const url=qs?path+'?'+qs:path;
-      const r=await fetch(url);
+      const r=await CC.fetch(url);
       if(!r.ok)throw new Error(r.status);
       return await r.json();
     }catch(e){

@@ -5,39 +5,20 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>模型资源 · Command Center</title>
 <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="stylesheet" href="/static/cc-styles.css">
+<script src="/static/cc-components.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-  *{margin:0;padding:0;box-sizing:border-box}
-  html{scroll-behavior:smooth}
-  body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;background:#fff;color:#1d1d1f;-webkit-font-smoothing:antialiased}
+  /* ═══ 页面特有样式 ═══ */
 
-  .section{max-width:980px;margin:0 auto;padding:60px 22px}
-  .sec-head{margin-bottom:32px}
-  .sec-eyebrow{font-size:13.5px;font-weight:600;color:#86868b;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
-  .sec-title{font-size:36px;font-weight:800;letter-spacing:-1.5px;line-height:1.1}
-  .sec-sub{font-size:15px;color:#86868b;margin-top:6px}
-  .divider{max-width:980px;margin:0 auto;height:1px;background:#e5e5ea}
-
-  .hero{text-align:center;padding:90px 22px 50px;max-width:980px;margin:0 auto}
-  .hero h1{font-size:56px;font-weight:800;letter-spacing:-2.5px;line-height:1.05;margin-bottom:8px}
-  .hero-sub{font-size:19px;color:#86868b;font-weight:400;letter-spacing:-.2px}
-
-  /* Row list */
-  .row-list{border-top:1px solid #e5e5ea}
-  .row{display:flex;align-items:center;padding:18px 0;border-bottom:1px solid #e5e5ea;cursor:default;transition:background .12s}
-  .row:hover{background:#fafafa;margin:0 -22px;padding:18px 22px;border-color:transparent}
-  .row:hover+.row{border-top-color:transparent}
-  .row-icon{font-size:22px;width:44px;height:44px;background:#f5f5f7;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-right:16px;flex-shrink:0}
-  .row-body{flex:1;min-width:0}
-  .row-title{font-size:15px;font-weight:600;letter-spacing:-.2px;margin-bottom:1px}
-  .row-desc{font-size:13.5px;color:#86868b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .row-meta{display:flex;align-items:center;gap:6px;margin-left:16px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
-  .pill{font-size:10.5px;font-weight:600;padding:3px 10px;border-radius:980px;display:inline-block;letter-spacing:.2px}
+  /* Pill variants (page-specific colors) */
   .pill-primary{background:#e8f8ed;color:#30d158}
   .pill-vision{background:#f3e8ff;color:#8b5cf6}
   .pill-thinking{background:#fff4e0;color:#c88200}
   .pill-free{background:#e8f8ed;color:#30d158}
   .pill-fallback{background:#f5f5f7;color:#8e8e93}
+  .pill{font-size:10.5px;font-weight:600;padding:3px 10px;border-radius:980px;display:inline-block;letter-spacing:.2px}
+
+  /* Row specs (inline details) */
   .row-specs{display:flex;gap:14px;margin-top:3px;font-size:12px;color:#aeaeb2;font-variant-numeric:tabular-nums}
   .row-specs strong{color:#1d1d1f;font-weight:500}
 
@@ -53,12 +34,7 @@
   .rq-red{background:#ff3b30}
   .rq-hint{font-size:10.5px;color:#aeaeb2;margin-top:6px}
 
-  /* Compare Table */
-  .table-wrap{overflow-x:auto;border-radius:14px;background:#f5f5f7}
-  table{width:100%;border-collapse:collapse;font-size:13px}
-  th{background:rgba(0,0,0,.03);font-weight:600;text-align:left;padding:12px 14px;border-bottom:2px solid rgba(0,0,0,.06);white-space:nowrap;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:#86868b}
-  td{padding:10px 14px;border-bottom:1px solid rgba(0,0,0,.04)}
-  tr:hover td{background:rgba(0,113,227,.04)}
+  /* Compare table extras */
   .tag-yes{color:#30d158;font-weight:600}
   .tag-no{color:#d2d2d7}
 
@@ -72,18 +48,7 @@
   .chain-arrow{font-size:20px;color:#c7c7cc;padding:0 8px;font-weight:300}
   .chain-hint{font-size:11.5px;color:#86868b;text-align:center;margin-bottom:8px}
 
-  footer{text-align:center;padding:56px 22px;font-size:12.5px;color:#c7c7cc;border-top:1px solid #e5e5ea;max-width:980px;margin:0 auto}
-
-  [data-theme="dark"] body{background:#0a0a0f;color:#e2e8f0}
-  [data-theme="dark"] .hero-sub{color:#94a3b8}
-  [data-theme="dark"] .divider{background:#1e293b}
-  [data-theme="dark"] .sec-eyebrow{color:#94a3b8}
-  [data-theme="dark"] .sec-sub{color:#94a3b8}
-  [data-theme="dark"] .row-list{border-top-color:#1e293b}
-  [data-theme="dark"] .row{border-bottom-color:#1e293b}
-  [data-theme="dark"] .row:hover{background:#1e293b}
-  [data-theme="dark"] .row-icon{background:#1e293b}
-  [data-theme="dark"] .row-desc{color:#94a3b8}
+  /* ═══ Dark theme — page-specific ═══ */
   [data-theme="dark"] .row-specs{color:#64748b}
   [data-theme="dark"] .row-specs strong{color:#e2e8f0}
   [data-theme="dark"] .rq-label{color:#64748b}
@@ -95,10 +60,6 @@
   [data-theme="dark"] .pill-thinking{background:#451a03;color:#fbbf24}
   [data-theme="dark"] .pill-free{background:#052e16;color:#4ade80}
   [data-theme="dark"] .pill-fallback{background:#1e293b;color:#64748b}
-  [data-theme="dark"] .table-wrap{background:#1e293b}
-  [data-theme="dark"] th{background:rgba(255,255,255,.03);border-bottom-color:rgba(255,255,255,.08);color:#94a3b8}
-  [data-theme="dark"] td{border-bottom-color:rgba(255,255,255,.04)}
-  [data-theme="dark"] tr:hover td{background:rgba(245,158,11,.04)}
   [data-theme="dark"] .tag-yes{color:#4ade80}
   [data-theme="dark"] .tag-no{color:#334155}
   [data-theme="dark"] .chain-wrap{background:#1e293b}
@@ -106,61 +67,54 @@
   [data-theme="dark"] .cn-sub{color:#64748b}
   [data-theme="dark"] .chain-arrow{color:#334155}
   [data-theme="dark"] .chain-hint{color:#64748b}
-  [data-theme="dark"] footer{color:#475569;border-top-color:#1e293b}
 
+  /* ═══ Responsive — page-specific ═══ */
   @media(max-width:768px){
-    .hero h1{font-size:34px}
-    .hero{padding:60px 18px 36px}
-    .hero-sub{font-size:16px}
-    .sec-title{font-size:26px}
-    .section{padding:40px 16px}
-    .row:hover{margin:0;padding:18px 22px}
     .row-quota{flex-direction:column;gap:6px}
     .rq-item{max-width:none}
-    footer{padding:36px 22px}
   }
 </style>
 </head>
 <body>
 
-<div class="hero">
+<div class="cc-hero">
   <h1>模型资源</h1>
-  <div class="hero-sub">当前可用 AI 模型 — 特性、配额与链路</div>
+  <div class="cc-hero-sub">当前可用 AI 模型 — 特性、配额与链路</div>
 </div>
 
-<div class="divider"></div>
+<div class="cc-divider"></div>
 
 <!-- Models (with inline quota) -->
-<div class="section">
-  <div class="sec-head">
-    <div class="sec-eyebrow">模型一览</div>
-    <div class="sec-title">有什么可用。</div>
-    <div class="sec-sub">8 个模型覆盖推理、视觉、编码、本地推理</div>
+<div class="cc-section">
+  <div class="cc-sec-head">
+    <div class="cc-eyebrow">模型一览</div>
+    <div class="cc-sec-title">有什么可用。</div>
+    <div class="cc-sec-sub">8 个模型覆盖推理、视觉、编码、本地推理</div>
   </div>
-  <div class="row-list" id="model-list"></div>
+  <div class="cc-row-list" id="model-list"></div>
 </div>
 
-<div class="divider"></div>
+<div class="cc-divider"></div>
 
 <!-- Compare Table -->
-<div class="section">
-  <div class="sec-head">
-    <div class="sec-eyebrow">特性对比</div>
-    <div class="sec-title">并排看。</div>
+<div class="cc-section">
+  <div class="cc-sec-head">
+    <div class="cc-eyebrow">特性对比</div>
+    <div class="cc-sec-title">并排看。</div>
   </div>
-  <div class="table-wrap">
+  <div class="cc-table-wrap">
     <table id="compare-table"></table>
   </div>
 </div>
 
-<div class="divider"></div>
+<div class="cc-divider"></div>
 
 <!-- Fallback Chain -->
-<div class="section">
-  <div class="sec-head">
-    <div class="sec-eyebrow">Fallback 链路</div>
-    <div class="sec-title">挂了怎么办。</div>
-    <div class="sec-sub">主推理链路自动降级顺序</div>
+<div class="cc-section">
+  <div class="cc-sec-head">
+    <div class="cc-eyebrow">Fallback 链路</div>
+    <div class="cc-sec-title">挂了怎么办。</div>
+    <div class="cc-sec-sub">主推理链路自动降级顺序</div>
   </div>
   <div class="chain-wrap">
     <div class="chain-hint">主推理 — GLM-5.1 优先，自动降级</div>
@@ -168,14 +122,14 @@
   </div>
 </div>
 
-<div class="divider"></div>
+<div class="cc-divider"></div>
 
 <!-- Vision Chain -->
-<div class="section">
-  <div class="sec-head">
-    <div class="sec-eyebrow">视觉链路</div>
-    <div class="sec-title">看图说话。</div>
-    <div class="sec-sub">图像 / 截图分析自动降级顺序</div>
+<div class="cc-section">
+  <div class="cc-sec-head">
+    <div class="cc-eyebrow">视觉链路</div>
+    <div class="cc-sec-title">看图说话。</div>
+    <div class="cc-sec-sub">图像 / 截图分析自动降级顺序</div>
   </div>
   <div class="chain-wrap">
     <div class="chain-hint">视觉分析 — GPT-5.5 优先，Kimi 兜底</div>
@@ -183,7 +137,7 @@
   </div>
 </div>
 
-<footer>Command Center · Dynasty</footer>
+<footer class="cc-footer">Command Center · Dynasty</footer>
 
 <script>
 const MODELS=[
@@ -228,15 +182,15 @@ function renderModels(){
     ];
     if(m.vision)specs.push('<span>视觉 <strong>✓</strong></span>');
     if(m.thinking)specs.push('<span>Thinking <strong>✓</strong></span>');
-    return '<div class="row">'+
-      '<div class="row-icon">'+m.icon+'</div>'+
-      '<div class="row-body">'+
-        '<div class="row-title">'+m.name+'</div>'+
-        '<div class="row-desc">'+m.role+'</div>'+
+    return '<div class="cc-row">'+
+      '<div class="cc-row-icon">'+m.icon+'</div>'+
+      '<div class="cc-row-body">'+
+        '<div class="cc-row-title">'+m.name+'</div>'+
+        '<div class="cc-row-desc">'+m.role+'</div>'+
         '<div class="row-specs">'+specs.join('')+'</div>'+
         (showQuota?quotaHtml(m.quotaGroup):'')+
       '</div>'+
-      '<div class="row-meta">'+m.pills.map(p=>'<span class="pill '+PILL_MAP[p]+'">'+PILL_LABEL[p]+'</span>').join('')+'</div>'+
+      '<div class="cc-row-meta">'+m.pills.map(p=>'<span class="pill '+PILL_MAP[p]+'">'+PILL_LABEL[p]+'</span>').join('')+'</div>'+
     '</div>';
   }).join('');
 }
@@ -260,7 +214,7 @@ renderChain('vision-chain',[{name:'GPT-5.5',provider:'OpenAI Codex'},{name:'Kimi
 
 (async()=>{
   try{
-    const r=await fetch('/api/usage');
+    const r=await CC.fetch('/api/usage');
     if(!r.ok)return;
     const d=await r.json();
     const cal=d.calibration||{};
@@ -287,6 +241,6 @@ renderChain('vision-chain',[{name:'GPT-5.5',provider:'OpenAI Codex'},{name:'Kimi
   }catch(e){}
 })();
 </script>
-<script src="/static/shared-nav.js?v=6"></script>
+<script src="/static/shared-nav.js?v=7"></script>
 </body>
 </html>
