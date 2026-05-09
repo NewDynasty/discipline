@@ -1,0 +1,87 @@
+# Portal Registry — Command Center 子系统注册表
+# 加新系统只改这个文件，不改 Python/JS 代码
+# 后端从这个文件驱动：页面路由、导航、健康检查、反代
+
+systems:
+  - id: portal
+    name: Command Center
+    path: /portal
+    html: index.html
+    icon: "⚡"
+    nav: true
+    brand: true
+
+  - id: docs
+    name: 文档
+    path: /docs
+    html: docs.html
+    icon: "📚"
+    nav: true
+    # docs 有自己的 SPA 路由逻辑（/docs/{path}），不走通用路由
+
+  - id: knowledge
+    name: 知识库
+    path: /knowledge
+    html: knowledge.html
+    icon: "🧠"
+    nav: true
+
+  - id: models
+    name: 模型
+    path: /models
+    html: models.html
+    icon: "🤖"
+    nav: true
+
+  - id: graph
+    name: 图谱
+    path: /graph
+    html: graph.html
+    icon: "🕹️"
+    nav: true
+    requires: [graph.py]
+
+  - id: deploy
+    name: 部署
+    path: /deploy
+    html: deploy.html
+    icon: "🚀"
+    nav: true
+    auth_level: admin
+
+  - id: hotspot
+    name: 热点
+    path: /hotspot
+    html: hotspot.html
+    icon: "🔥"
+    nav: true
+    proxy: http://localhost:8200
+
+  # ── 新系统示例（取消注释即生效）──────────────────
+  # - id: monitor
+  #   name: 监控
+  #   path: /monitor
+  #   html: monitor.html
+  #   icon: "📊"
+  #   nav: true
+  #   health_port: 3000
+
+services:
+  - name: Hermes Gateway
+    port: 8000
+    category: core
+  - name: Discipline
+    port: 8899
+    category: core
+  - name: Codex Server
+    port: 8090
+    category: ai
+  - name: Datasette
+    port: 8200
+    category: data
+  - name: RSSHub
+    port: 1200
+    category: data
+  - name: Home Assistant
+    port: 8123
+    category: smart-home

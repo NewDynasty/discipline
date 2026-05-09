@@ -1,6 +1,6 @@
 """
 Portal routes — service status, research notes, kanban boards, earlyrise summary,
-and static page serving (/portal, /models, /deploy).
+and static page serving. All driven by portal-registry.yaml.
 """
 
 import glob
@@ -13,11 +13,11 @@ from fastapi import APIRouter
 from fastapi.responses import FileResponse, JSONResponse
 
 # --- Shared helpers ---
-from deps import OBSIDIAN_VAULT, PORTAL_DIR, db_conn, get_db, _calc_streak, VAULT_REGISTRY
+from deps import OBSIDIAN_VAULT, PORTAL_DIR, db_conn, get_db, _calc_streak, VAULT_REGISTRY, PORTAL_REGISTRY
 
 router = APIRouter(tags=["portal"])
 
-# ── Service health ──────────────────────────────────────────────────────────
+# ── Service health (from registry) ───────────────────────────────────────────
 
 def _check_port(host: str, port: int, timeout: float = 1.0):
     """TCP connect check. Returns (online: bool, latency_ms: float|None)."""
@@ -31,15 +31,6 @@ def _check_port(host: str, port: int, timeout: float = 1.0):
         return True, latency
     except (socket.timeout, ConnectionRefusedError, OSError):
         return False, None
-
-SERVICES = [
-    {"name": "Hermes Gateway", "port": 8000},
-    {"name": "Early Rise", "port": 8899},
-    {"name": "Codex Server", "port": 8090},
-    {"name": "Obsidian Kanban", "port": 27124},
-    {"name": "Sync-Hub", "port": 8081},
-    {"name": "RSSHub", "port": 1200},
-]
 
 # In-memory health history: {port: {online, latency, last_check, last_up, uptime_since}}
 _health_cache: dict = {}
@@ -55,15 +46,14 @@ def _get_health(svc: dict) -> dict:
     entry = {"online": online, "latency": latency, "last_check": now}
 
     if online:
-        # Track when service first came online (uptime_since)
         if not prev or not prev.get("online"):
-            entry["uptime_since"] = now  # just came online
+            entry["uptime_since"] = now
         else:
             entry["uptime_since"] = prev.get("uptime_since", now)
         entry["last_up"] = now
     else:
         if prev and prev.get("online"):
-            entry["uptime_since"] = None  # just went offline
+            entry["uptime_since"] = None
         else:
             entry["uptime_since"] = None
         entry["last_up"] = prev.get("last_up") if prev else None
@@ -74,9 +64,10 @@ def _get_health(svc: dict) -> dict:
 
 @router.get("/api/portal/status")
 def portal_status():
-    """Service health check with latency, last check time, and uptime."""
+    """Service health check — reads services from portal-registry.yaml."""
+    services = PORTAL_REGISTRY.get("services", [])
     results = []
-    for svc in SERVICES:
+    for svc in services:
         h = _get_health(svc)
         uptime_secs = None
         if h["online"] and h.get("uptime_since"):
@@ -86,6 +77,7 @@ def portal_status():
         results.append({
             "name": svc["name"],
             "port": svc["port"],
+            "category": svc.get("category", ""),
             "online": h["online"],
             "latency_ms": h["latency"],
             "last_check": round(h["last_check"]),
@@ -94,7 +86,58 @@ def portal_status():
         })
     return results
 
-# ── Research notes ──────────────────────────────────────────────────────────
+
+# ── Navigation API ────────────────────────────────────────────────────────────
+
+@router.get("/api/portal/nav")
+def portal_nav():
+    """Return navigation items from portal-registry.yaml for frontend."""
+    systems = PORTAL_REGISTRY.get("systems", [])
+    nav_items = []
+    for sys in systems:
+        if not sys.get("nav", False):
+            continue
+        nav_items.append({
+            "id": sys.get("id", ""),
+            "name": sys.get("name", ""),
+            "href": sys.get("path", ""),
+            "icon": sys.get("icon", ""),
+            "brand": sys.get("brand", False),
+        })
+    return {"nav": nav_items}
+
+
+# ── Systems overview ──────────────────────────────────────────────────────────
+
+@router.get("/api/portal/systems")
+def portal_systems():
+    """Return all registered systems with metadata."""
+    systems = PORTAL_REGISTRY.get("systems", [])
+    result = []
+    for sys in systems:
+        entry = {
+            "id": sys.get("id", ""),
+            "name": sys.get("name", ""),
+            "path": sys.get("path", ""),
+            "icon": sys.get("icon", ""),
+            "nav": sys.get("nav", False),
+            "brand": sys.get("brand", False),
+            "auth_level": sys.get("auth_level", ""),
+            "category": sys.get("category", ""),
+        }
+        # Check if HTML file exists
+        html_file = sys.get("html", "")
+        if html_file:
+            entry["has_page"] = os.path.exists(os.path.join(PORTAL_DIR, html_file))
+        # Check proxy availability
+        proxy = sys.get("proxy", "")
+        if proxy:
+            entry["has_proxy"] = True
+        result.append(entry)
+    return result
+
+
+# ── Research notes ────────────────────────────────────────────────────────────
 
 @router.get("/api/portal/research")
 def portal_research():
@@ -105,15 +148,13 @@ def portal_research():
         return []
 
     notes = []
-    for f in glob.glob(os.path.join(research_dir, "*.md")):
+    for f in glob.glob(os.path.join(research_dir, "**/*.md"), recursive=True):
         title = os.path.splitext(os.path.basename(f))[0]
-        # Parse frontmatter for tags
         tags = []
         mtime = os.path.getmtime(f)
         try:
             with open(f, "r", encoding="utf-8") as fh:
                 head = fh.read(500)
-                # Extract tags from frontmatter
                 fm = re.search(r'^---\s*\n(.*?)\n---', head, re.DOTALL)
                 if fm:
                     tag_match = re.search(r'tags:\s*\[(.*?)\]', fm.group(1))
@@ -121,16 +162,16 @@ def portal_research():
                         tags = [t.strip().strip('"\'') for t in tag_match.group(1).split(",") if t.strip()]
         except Exception:
             pass
+        rel = os.path.relpath(f, OBSIDIAN_VAULT)
         notes.append({"title": title, "tags": tags, "mtime": mtime,
-                       "url": f"/docs/{research_dir_name}/{os.path.basename(f)}"})
+                       "url": f"/docs/{rel}"})
 
-    # Sort by mtime desc, take 10
     notes.sort(key=lambda x: x["mtime"], reverse=True)
     for n in notes:
         del n["mtime"]
     return notes[:10]
 
-# ── Kanban boards ───────────────────────────────────────────────────────────
+# ── Kanban boards ─────────────────────────────────────────────────────────────
 
 @router.get("/api/portal/kanban")
 def portal_kanban():
@@ -143,7 +184,6 @@ def portal_kanban():
     boards = []
     for f in glob.glob(os.path.join(kanban_dir, "*.md")):
         name = os.path.splitext(os.path.basename(f))[0]
-        # Count tasks (lines starting with - [ ] or - [x])
         count = 0
         try:
             with open(f, "r", encoding="utf-8") as fh:
@@ -156,7 +196,7 @@ def portal_kanban():
                         "url": f"/docs/{kanban_dir_name}/{os.path.basename(f)}"})
     return boards
 
-# ── Early Rise summary ──────────────────────────────────────────────────────
+# ── Early Rise summary ────────────────────────────────────────────────────────
 
 @router.get("/api/portal/earlyrise")
 def portal_earlyrise():
@@ -168,30 +208,36 @@ def portal_earlyrise():
     passed = row["passed"] if row and row["passed"] else 0
     return {"streak": streak, "total": total, "passed": passed}
 
-# ── Serve Portal Frontend pages ─────────────────────────────────────────────
+# ── Serve Portal Frontend pages (from registry) ──────────────────────────────
 
-@router.get("/portal")
-@router.get("/portal/")
-def serve_portal():
-    html_path = os.path.join(PORTAL_DIR, "index.html")
-    if os.path.exists(html_path):
-        return FileResponse(html_path, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
-    return JSONResponse({"error": "Portal not found"}, status_code=404)
+def _register_page_routes():
+    """Register page routes from portal-registry.yaml."""
+    systems = PORTAL_REGISTRY.get("systems", [])
+    for sys_cfg in systems:
+        html_file = sys_cfg.get("html", "")
+        path = sys_cfg.get("path", "")
+        if not html_file or not path:
+            continue
+        # Skip docs (has its own SPA routing with /docs/{path})
+        if sys_cfg.get("id") == "docs":
+            continue
 
+        html_path = os.path.join(PORTAL_DIR, html_file)
+        route_name = f"serve_{sys_cfg['id']}"
 
-@router.get("/models")
-@router.get("/models/")
-def serve_models():
-    html_path = os.path.join(PORTAL_DIR, "models.html")
-    if os.path.exists(html_path):
-        return FileResponse(html_path, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
-    return JSONResponse({"error": "Models page not found"}, status_code=404)
+        def _make_handler(fp):
+            def handler():
+                if os.path.exists(fp):
+                    return FileResponse(fp, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
+                return JSONResponse({"error": "Page not found"}, status_code=404)
+            return handler
 
+        handler = _make_handler(html_path)
+        handler.__name__ = route_name
 
-@router.get("/deploy")
-@router.get("/deploy/")
-def serve_deploy():
-    html_path = os.path.join(PORTAL_DIR, "deploy.html")
-    if os.path.exists(html_path):
-        return FileResponse(html_path, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
-    return JSONResponse({"error": "Deploy page not found"}, status_code=404)
+        # Register with and without trailing slash
+        router.get(path)(handler)
+        if not path.endswith("/"):
+            router.get(path + "/")(handler)
+
+_register_page_routes()

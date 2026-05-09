@@ -17,6 +17,22 @@ SECRET_TOKEN = os.environ.get("EARLYRISE_TOKEN", "earlyrise2026")
 OBSIDIAN_VAULT = os.environ.get("OBSIDIAN_VAULT", os.path.expanduser("~/Documents/Obsidian Vault"))
 PORTAL_DIR = os.path.join(os.path.dirname(_BACKEND_DIR), "portal")
 
+# --- Portal Registry ---
+def load_portal_registry() -> dict:
+    """Load portal-registry.yaml from portal dir. Requires PyYAML."""
+    reg_path = os.path.join(PORTAL_DIR, "portal-registry.yaml")
+    if not os.path.exists(reg_path):
+        return {"systems": [], "services": []}
+    try:
+        import yaml
+        with open(reg_path, "r", encoding="utf-8") as f:
+            return yaml.safe_load(f) or {"systems": [], "services": []}
+    except ImportError:
+        # Fallback: return empty if PyYAML not installed
+        return {"systems": [], "services": []}
+
+PORTAL_REGISTRY = load_portal_registry()
+
 # --- Vault Registry ---
 def load_vault_registry() -> dict:
     """Load vault-registry.yaml from vault root. No external deps needed."""

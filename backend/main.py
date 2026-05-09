@@ -135,10 +135,20 @@ async def hotspot_proxy(path: str, request: Request):
                 headers={k: v for k, v in request.headers.items() if k.lower() not in ("host",)},
                 content=await request.body(),
             )
+            resp_headers = {k: v for k, v in resp.headers.items()
+                           if k.lower() not in ("content-encoding", "transfer-encoding", "content-length")}
+            # Rewrite redirect Location so browser stays on our origin
+            # instead of looping back through the proxy
+            if resp.status_code in (301, 302, 303, 307, 308) and "location" in resp_headers:
+                loc = resp_headers["location"]
+                # Rewrite upstream host to our host, keep path
+                if loc.startswith(_HOTSPOT_UPSTREAM):
+                    loc = loc[len(_HOTSPOT_UPSTREAM):]
+                resp_headers["location"] = loc
             return Response(
                 content=resp.content,
                 status_code=resp.status_code,
-                headers=dict(resp.headers),
+                headers=resp_headers,
             )
     except (httpx.ConnectError, httpx.TimeoutException):
         return JSONResponse(
@@ -291,12 +301,6 @@ if _KNOWLEDGE_AVAILABLE:
         return {"report": _k.redact_secrets(report)}
 
     app.include_router(_kr)
-
-@app.get("/knowledge")
-@app.get("/knowledge/")
-def serve_knowledge():
-    html_path = os.path.join(PORTAL_DIR, "knowledge.html")
-    return FileResponse(html_path, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
 
 # --- Dev server ---
 if __name__ == "__main__":

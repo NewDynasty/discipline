@@ -219,16 +219,3 @@ def serve_docs(full_path: str = ""):
     if os.path.exists(html_path):
         return FileResponse(html_path)
     return JSONResponse({"error": "Docs UI not found"}, status_code=404)
-
-
-# ---------------------------------------------------------------------------
-# Graph SPA page route
-# ---------------------------------------------------------------------------
-
-@router.get("/graph")
-@router.get("/graph/")
-def serve_graph():
-    html_path = os.path.join(PORTAL_DIR, "graph.html")
-    if os.path.exists(html_path):
-        return FileResponse(html_path)
-    return JSONResponse({"error": "Graph UI not found"}, status_code=404)
