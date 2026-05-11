@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>看板 · Command Center</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="stylesheet" href="/static/cc-styles.css">
+<script src="/static/cc-components.js"></script>
+<style>
+  /* ═══ 页面特有样式 ═══ */
+
+  /* Board selector tabs */
+  .board-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px}
+  .board-tab{padding:8px 20px;border-radius:980px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid rgba(0,0,0,.1);background:rgba(255,255,255,.6);color:#86868b;transition:all .2s;font-family:inherit}
+  .board-tab:hover{border-color:#0071e3;color:#0071e3}
+  .board-tab.active{background:#0071e3;color:#fff;border-color:#0071e3}
+  [data-theme="dark"] .board-tab{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1);color:#94a3b8}
+  [data-theme="dark"] .board-tab:hover{border-color:#f59e0b;color:#f59e0b}
+  [data-theme="dark"] .board-tab.active{background:#f59e0b;color:#0a0a0f;border-color:#f59e0b}
+
+  /* Column layout — fill available width */
+  .kanban-columns{display:flex;gap:16px;overflow-x:auto;padding-bottom:12px}
+  .kanban-col{min-width:260px;flex:1}
+  .kanban-col-header{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#86868b;margin-bottom:12px;padding:0 4px;display:flex;align-items:center;gap:8px}
+  .kanban-col-count{font-size:11px;font-weight:600;background:rgba(0,0,0,.06);border-radius:980px;padding:2px 8px;color:#aeaeb2}
+  [data-theme="dark"] .kanban-col-header{color:#64748b}
+  [data-theme="dark"] .kanban-col-count{background:rgba(255,255,255,.06);color:#64748b}
+
+  /* Card */
+  .kanban-card{background:rgba(255,255,255,.8);border:1px solid rgba(0,0,0,.06);border-radius:14px;padding:16px;margin-bottom:10px;cursor:pointer;transition:all .2s;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+  .kanban-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.08)}
+  .kanban-card.expanded{border-color:#0071e3;box-shadow:0 4px 16px rgba(0,113,227,.12)}
+  [data-theme="dark"] .kanban-card{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.06)}
+  [data-theme="dark"] .kanban-card:hover{box-shadow:0 6px 20px rgba(0,0,0,.3)}
+  [data-theme="dark"] .kanban-card.expanded{border-color:#f59e0b;box-shadow:0 4px 16px rgba(245,158,11,.12)}
+
+  /* Card title */
+  .kc-title{font-size:14px;font-weight:600;color:#1d1d1f;line-height:1.4;margin-bottom:8px}
+  [data-theme="dark"] .kc-title{color:#e2e8f0}
+
+  /* Tags */
+  .kc-tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}
+  .kc-tag{font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:980px;background:rgba(0,113,227,.08);color:#0071e3}
+  .kc-tag.priority-high{background:rgba(255,59,48,.08);color:#ff3b30}
+  .kc-tag.priority-medium{background:rgba(245,158,11,.08);color:#c88200}
+  .kc-tag.priority-low{background:rgba(52,199,89,.08);color:#34c759}
+  [data-theme="dark"] .kc-tag{background:rgba(0,113,227,.15);color:#60a5fa}
+  [data-theme="dark"] .kc-tag.priority-high{background:rgba(255,59,48,.15);color:#f87171}
+  [data-theme="dark"] .kc-tag.priority-medium{background:rgba(245,158,11,.15);color:#fbbf24}
+  [data-theme="dark"] .kc-tag.priority-low{background:rgba(52,199,89,.15);color:#4ade80}
+
+  /* Metadata panel (expanded) */
+  .kc-meta{display:none;margin-top:12px;padding-top:12px;border-top:1px solid rgba(0,0,0,.06)}
+  .kanban-card.expanded .kc-meta{display:block}
+  [data-theme="dark"] .kc-meta{border-top-color:rgba(255,255,255,.06)}
+
+  .kc-meta-label{font-size:11px;font-weight:700;color:#86868b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;margin-top:10px}
+  .kc-meta-label:first-child{margin-top:0}
+  [data-theme="dark"] .kc-meta-label{color:#64748b}
+
+  .kc-meta-value{font-size:13px;color:#1d1d1f;line-height:1.5}
+  [data-theme="dark"] .kc-meta-value{color:#cbd5e1}
+
+  .kc-file-list{display:flex;flex-direction:column;gap:2px}
+  .kc-file{font-size:12px;font-family:'SF Mono',Menlo,monospace;color:#0071e3;padding:2px 6px;background:rgba(0,113,227,.04);border-radius:4px}
+  [data-theme="dark"] .kc-file{color:#60a5fa;background:rgba(96,165,250,.08)}
+
+  /* Bridge status badge */
+  .bridge-status{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 12px;border-radius:980px;margin-bottom:20px}
+  .bridge-status.ok{background:rgba(52,199,89,.08);color:#34c759}
+  .bridge-status.off{background:rgba(255,59,48,.08);color:#ff3b30}
+  .bridge-dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+  [data-theme="dark"] .bridge-status.ok{background:rgba(74,222,128,.1);color:#4ade80}
+  [data-theme="dark"] .bridge-status.off{background:rgba(248,113,113,.1);color:#f87171}
+
+  /* Empty state */
+  .empty-state{text-align:center;padding:60px 20px;color:#aeaeb2;font-size:14px}
+  .empty-state .empty-icon{font-size:48px;margin-bottom:12px}
+
+  /* Error state */
+  .error-state{text-align:center;padding:40px 20px;color:#ff3b30;font-size:14px}
+
+  /* Empty column state */
+  .empty-col{padding:20px;border:2px dashed rgba(0,0,0,.08);border-radius:12px;text-align:center;font-size:12px;color:#aeaeb2;margin-top:4px}
+  [data-theme="dark"] .empty-col{border-color:rgba(255,255,255,.06);color:#475569}
+
+  /* Card subtitle (repo link etc.) */
+  .kc-subtitle{font-size:12px;color:#86868b;margin-top:4px;font-family:'SF Mono',Menlo,monospace}
+  [data-theme="dark"] .kc-subtitle{color:#64748b}
+
+  /* Expand toggle icon */
+  .kc-expand{float:right;font-size:11px;color:#aeaeb2;transition:transform .2s}
+  .kanban-card.expanded .kc-expand{transform:rotate(180deg)}
+
+  /* ═══ Responsive ═══ */
+  @media(max-width:768px){
+    .kanban-columns{flex-direction:column}
+    .kanban-col{max-width:none;min-width:auto}
+  }
+</style>
+</head>
+<body>
+
+<div class="cc-hero">
+  <h1>看板</h1>
+  <div class="cc-hero-sub">任务变更追踪 — Kanban 卡片 × Diff 可视化</div>
+</div>
+
+<div class="cc-divider"></div>
+
+<div class="cc-section">
+  <!-- Bridge status -->
+  <div id="bridge-status"></div>
+
+  <!-- Board tabs -->
+  <div class="board-tabs" id="board-tabs"></div>
+
+  <!-- Kanban board -->
+  <div id="kanban-content"></div>
+</div>
+
+<script src="/static/shared-nav.js"></script>
+<script>
+(function(){
+  const BRIDGE_URL = '/api/portal/kanban-bridge';
+  let boards = [];
+  let activeBoard = null;
+
+  // ── Init ──
+  async function init(){
+    await checkBridge();
+    await loadBoards();
+  }
+
+  // ── Bridge health ──
+  async function checkBridge(){
+    const el = document.getElementById('bridge-status');
+    try {
+      const res = await CC.fetch(BRIDGE_URL + '/health');
+      const data = await res.json();
+      el.innerHTML = `<div class="bridge-status ${data.ok?'ok':'off'}"><span class="bridge-dot"></span>Kanban Bridge v${data.version||'?'} — ${data.ok?'已连接':'离线'}</div>`;
+    } catch(e){
+      el.innerHTML = '<div class="bridge-status off"><span class="bridge-dot"></span>Kanban Bridge — 离线</div>';
+    }
+  }
+
+  // ── Load boards ──
+  async function loadBoards(){
+    try {
+      const res = await CC.fetch(BRIDGE_URL + '/boards');
+      const data = await res.json();
+      boards = data.boards || [];
+      if(boards.length === 0){
+        document.getElementById('kanban-content').innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div>暂无看板数据</div>';
+        return;
+      }
+      renderTabs();
+      // Auto-select first board
+      selectBoard(boards[0].id);
+    } catch(e){
+      document.getElementById('kanban-content').innerHTML = '<div class="error-state">加载看板失败: '+e.message+'</div>';
+    }
+  }
+
+  // ── Render board tabs ──
+  function renderTabs(){
+    const tabsEl = document.getElementById('board-tabs');
+    tabsEl.innerHTML = boards.map(b =>
+      `<button class="board-tab" data-board-id="${esc(b.id)}" onclick="window._selectBoard('${esc(b.id)}')">${esc(b.title)} <span style="opacity:.5">${b.cardCount}卡</span></button>`
+    ).join('');
+  }
+
+  // ── Select board ──
+  async function selectBoard(boardId){
+    activeBoard = boardId;
+    // Update tabs
+    document.querySelectorAll('.board-tab').forEach(t => {
+      t.classList.toggle('active', t.dataset.boardId === boardId);
+    });
+    // Load board detail
+    try {
+      const res = await CC.fetch(BRIDGE_URL + '/boards/' + encodeURIComponent(boardId));
+      const data = await res.json();
+      if(!data.ok){ throw new Error('API error'); }
+      renderBoard(data.board);
+    } catch(e){
+      document.getElementById('kanban-content').innerHTML = '<div class="error-state">加载看板详情失败</div>';
+    }
+  }
+  window._selectBoard = selectBoard;
+
+  // ── Render board ──
+  function renderBoard(board){
+    const container = document.getElementById('kanban-content');
+    if(!board.columns || board.columns.length === 0){
+      container.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div>此看板暂无列</div>';
+      return;
+    }
+    const cardsByCol = {};
+    board.columns.forEach(c => cardsByCol[c] = []);
+    (board.cards || []).forEach(card => {
+      if(cardsByCol[card.column]) cardsByCol[card.column].push(card);
+    });
+
+    container.innerHTML = '<div class="kanban-columns">' +
+      board.columns.map(col => {
+        const cards = cardsByCol[col] || [];
+        return `<div class="kanban-col">
+          <div class="kanban-col-header">${esc(col)} <span class="kanban-col-count">${cards.length}</span></div>
+          ${cards.map(c => renderCard(c)).join('')}
+          ${cards.length === 0 ? '<div class="empty-col">暂无卡片</div>' : ''}
+        </div>`;
+      }).join('') +
+    '</div>';
+  }
+
+  // ── Render single card ──
+  function renderCard(card){
+    let rawTitle = card.title || 'Untitled';
+    // Split out repo path and port from title
+    let title = rawTitle;
+    let subtitle = '';
+    const repoMatch = rawTitle.match(/(`[^`]+`)/g);
+    if(repoMatch){
+      repoMatch.forEach(r => { title = title.replace(r, '').trim(); subtitle += ' ' + r; });
+    }
+    const portMatch = rawTitle.match(/:\d{4,5}\b/);
+    if(portMatch){
+      title = title.replace(portMatch[0], '').trim();
+      subtitle += ' ' + portMatch[0];
+    }
+    // Clean up double spaces/dashes
+    title = title.replace(/\s{2,}/g,' ').replace(/\s*—\s*$/,'').replace(/—\s*$/,'').trim();
+    subtitle = subtitle.trim();
+    const tags = (card.tags || []).map(t => `<span class="kc-tag">${esc(t)}</span>`).join('');
+    const priority = card.priority ? `<span class="kc-tag priority-${card.priority}">${card.priority}</span>` : '';
+    const blocked = card.blocked ? '<span class="kc-tag priority-high">blocked</span>' : '';
+
+    // Metadata section (from kanban_complete metadata or card metadata)
+    const meta = card.metadata || {};
+    const changedFiles = meta.changed_files || [];
+    const decisions = meta.decisions || [];
+    const testsPassed = meta.tests_passed;
+    const summary = meta.summary || card.summary || '';
+
+    const filesHtml = changedFiles.length > 0
+      ? `<div class="kc-meta-label">变更文件</div><div class="kc-file-list">${changedFiles.map(f => `<span class="kc-file">${esc(f)}</span>`).join('')}</div>`
+      : '';
+    const decisionsHtml = decisions.length > 0
+      ? `<div class="kc-meta-label">设计决策</div><div class="kc-meta-value">${decisions.map(d => '• ' + esc(d)).join('<br>')}</div>`
+      : '';
+    const testsHtml = testsPassed != null
+      ? `<div class="kc-meta-label">测试通过</div><div class="kc-meta-value">${testsPassed} 个测试</div>`
+      : '';
+    const summaryHtml = summary
+      ? `<div class="kc-meta-label">摘要</div><div class="kc-meta-value">${esc(summary)}</div>`
+      : '';
+
+    const hasMeta = changedFiles.length || decisions.length || testsPassed != null || summary;
+
+    return `<div class="kanban-card" onclick="window._toggleCard(this)">
+      <span class="kc-expand">▼</span>
+      <div class="kc-title">${esc(title)}</div>
+      ${subtitle ? '<div class="kc-subtitle">' + esc(subtitle) + '</div>' : ''}
+      <div class="kc-tags">${priority}${tags}${blocked}</div>
+      ${!hasMeta ? '' : `<div class="kc-meta">
+        ${summaryHtml}
+        ${filesHtml}
+        ${decisionsHtml}
+        ${testsHtml}
+      </div>`}
+    </div>`;
+  }
+
+  // ── Toggle card expand ──
+  window._toggleCard = function(el){
+    el.classList.toggle('expanded');
+  };
+
+  // ── Escape HTML ──
+  function esc(s){
+    if(!s) return '';
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

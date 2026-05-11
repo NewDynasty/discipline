@@ -61,6 +61,13 @@ systems:
     name: 系统总览
     path: /systems
     html: systems.html
+    icon: "📊"
+    nav: true
+
+  - id: kanban
+    name: 看板
+    path: /kanban
+    html: kanban.html
     icon: "📋"
     nav: true
 

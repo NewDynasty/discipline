@@ -342,7 +342,9 @@ document.getElementById('search-input').addEventListener('input',e=>{
 function handleHash(){
   const hash=decodeURIComponent(window.location.hash.slice(1));
   if(hash){
-    const path=hash.includes('/')?hash+'.md':hash;
+    // 防止 hash 中已含 .md 导致重复拼接
+    const clean=hash.endsWith('.md')?hash.slice(0,-3):hash;
+    const path=clean+'.md';
     loadDoc(path);
     // Activate sidebar item after tree loads
     waitForTree(()=>{

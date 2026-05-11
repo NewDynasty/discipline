@@ -74,16 +74,25 @@ def _extract_md_section(text: str, heading: str) -> str:
 
 @router.get("/api/docs/tree")
 def docs_tree():
-    """Return folder tree with file counts."""
+    """Return folder tree with file counts. Recursively scans subdirectories."""
     result = []
     for name, path in DOCS_DIRS.items():
         if not os.path.isdir(path):
             continue
         files = []
-        for f in sorted(glob.glob(os.path.join(path, "*.md"))):
-            fname = os.path.splitext(os.path.basename(f))[0]
-            mtime = os.path.getmtime(f)
-            files.append({"name": fname, "mtime": mtime})
+        # 递归扫描所有子目录中的 .md 文件
+        for root, dirs, filenames in os.walk(path):
+            # 排除 .obsidian 等隐藏目录
+            dirs[:] = [d for d in dirs if not d.startswith('.')]
+            for fn in sorted(filenames):
+                if not fn.endswith('.md'):
+                    continue
+                full = os.path.join(root, fn)
+                # 相对路径（相对于该 docs 目录），如 progress/discipline-progress
+                rel = os.path.relpath(full, path)
+                fname = os.path.splitext(rel)[0]  # 去掉 .md
+                mtime = os.path.getmtime(full)
+                files.append({"name": fname, "mtime": mtime})
         files.sort(key=lambda x: x["mtime"], reverse=True)
         for f in files:
             del f["mtime"]
@@ -140,7 +149,7 @@ def docs_content(path: str = ""):
 
 @router.get("/api/docs/search")
 def docs_search(q: str = ""):
-    """Full-text search across all docs dirs."""
+    """Full-text search across all docs dirs (recursive)."""
     if not q or len(q) < 2:
         return []
     results = []
@@ -148,19 +157,25 @@ def docs_search(q: str = ""):
     for name, dir_path in DOCS_DIRS.items():
         if not os.path.isdir(dir_path):
             continue
-        for f in glob.glob(os.path.join(dir_path, "*.md")):
-            try:
-                with open(f, "r", encoding="utf-8") as fh:
-                    content = fh.read(10000).lower()
-                if ql in content or ql in os.path.basename(f).lower():
-                    fname = os.path.splitext(os.path.basename(f))[0]
-                    results.append({
-                        "title": fname,
-                        "folder": name,
-                        "path": os.path.relpath(f, OBSIDIAN_VAULT),
-                    })
-            except Exception:
-                pass
+        for root, dirs, filenames in os.walk(dir_path):
+            dirs[:] = [d for d in dirs if not d.startswith('.')]
+            for fn in filenames:
+                if not fn.endswith('.md'):
+                    continue
+                fpath = os.path.join(root, fn)
+                try:
+                    with open(fpath, "r", encoding="utf-8") as fh:
+                        content = fh.read(10000).lower()
+                    if ql in content or ql in fn.lower():
+                        rel = os.path.relpath(fpath, OBSIDIAN_VAULT)
+                        fname = os.path.splitext(os.path.basename(fpath))[0]
+                        results.append({
+                            "title": fname,
+                            "folder": name,
+                            "path": rel,
+                        })
+                except Exception:
+                    pass
     return results[:20]
 
 

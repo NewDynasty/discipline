@@ -208,6 +208,51 @@ def portal_earlyrise():
     passed = row["passed"] if row and row["passed"] else 0
     return {"streak": streak, "total": total, "passed": passed}
 
+# ── Kanban Bridge proxy ──────────────────────────────────────────────────────
+
+import urllib.request
+import urllib.error
+
+KANBAN_BRIDGE = "http://localhost:27124"
+
+@router.api_route("/api/portal/kanban-bridge/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+def kanban_bridge_proxy(path: str = ""):
+    """Proxy requests to the Hermes kanban-bridge plugin (localhost:27124)."""
+    # FastAPI decodes the path, so we need to re-encode each segment for the upstream URL
+    import urllib.parse as _up
+    segments = path.split("/")
+    encoded_segments = [_up.quote(_up.unquote(s), safe="") for s in segments]
+    target = f"{KANBAN_BRIDGE}/{'/'.join(encoded_segments)}"
+    return _do_proxy(target)
+
+
+@router.api_route("/api/portal/kanban-bridge", methods=["GET"])
+def kanban_bridge_health():
+    """Health check for kanban bridge."""
+    import json as _json
+    try:
+        req = urllib.request.Request(f"{KANBAN_BRIDGE}/health")
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            return _json.loads(resp.read())
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+def _do_proxy(target_url: str):
+    """Simple HTTP proxy to kanban-bridge."""
+    import json as _json
+    try:
+        req = urllib.request.Request(target_url)
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = resp.read()
+            ct = resp.headers.get("Content-Type", "application/json")
+            return JSONResponse(content=_json.loads(data))
+    except urllib.error.HTTPError as e:
+        return JSONResponse(content={"ok": False, "error": f"Bridge returned {e.code}"}, status_code=e.code)
+    except Exception as e:
+        return JSONResponse(content={"ok": False, "error": str(e)}, status_code=502)
+
+
 # ── Serve Portal Frontend pages (from registry) ──────────────────────────────
 
 def _register_page_routes():
