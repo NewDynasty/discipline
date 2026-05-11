@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>变更日志 · Command Center</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="stylesheet" href="/static/cc-styles.css">
+<script src="/static/cc-components.js"></script>
+<style>
+  /* ═══ 页面特有样式 ═══ */
+
+  /* Filter bar */
+  .filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:28px;align-items:center}
+  .filter-bar .filter-label{font-size:12px;font-weight:600;color:#86868b;text-transform:uppercase;letter-spacing:.5px;margin-right:4px}
+  .filter-btn{padding:6px 16px;border-radius:980px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid rgba(0,0,0,.1);background:rgba(255,255,255,.6);color:#86868b;transition:all .2s;font-family:inherit}
+  .filter-btn:hover{border-color:#0071e3;color:#0071e3}
+  .filter-btn.active{background:#0071e3;color:#fff;border-color:#0071e3}
+  [data-theme="dark"] .filter-btn{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1);color:#94a3b8}
+  [data-theme="dark"] .filter-btn:hover{border-color:#f59e0b;color:#f59e0b}
+  [data-theme="dark"] .filter-btn.active{background:#f59e0b;color:#0a0a0f;border-color:#f59e0b}
+
+  /* Stats row */
+  .stats-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px}
+  .stat-card{padding:16px 22px;background:rgba(255,255,255,.7);border:1px solid rgba(0,0,0,.06);border-radius:14px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);min-width:120px;flex:1;text-align:center}
+  .stat-num{font-size:28px;font-weight:800;letter-spacing:-1px;color:#1d1d1f}
+  .stat-num.feat-color{color:#34c759}
+  .stat-num.fix-color{color:#ff6b6b}
+  .stat-num.ref-color{color:#5856d6}
+  .stat-num.total-color{color:#0071e3}
+  .stat-label{font-size:11px;font-weight:600;color:#86868b;text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+  [data-theme="dark"] .stat-card{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.06)}
+  [data-theme="dark"] .stat-num{color:#e2e8f0}
+  [data-theme="dark"] .stat-label{color:#64748b}
+
+  /* Timeline */
+  .timeline{position:relative;padding-left:36px}
+  .timeline::before{content:'';position:absolute;left:14px;top:12px;bottom:12px;width:2px;background:rgba(0,0,0,.06);border-radius:1px}
+  [data-theme="dark"] .timeline::before{background:rgba(255,255,255,.06)}
+
+  /* Day group */
+  .day-group{margin-bottom:32px;position:relative}
+  .day-dot{position:absolute;left:-30px;top:8px;width:12px;height:12px;border-radius:50%;background:#0071e3;border:2px solid #fff;box-shadow:0 0 0 2px rgba(0,113,227,.2);z-index:1}
+  [data-theme="dark"] .day-dot{background:#f59e0b;border-color:#0a0a0f;box-shadow:0 0 0 2px rgba(245,158,11,.2)}
+
+  .day-header{display:flex;align-items:baseline;gap:12px;margin-bottom:12px}
+  .day-date{font-size:16px;font-weight:700;color:#1d1d1f;letter-spacing:-.3px}
+  .day-relative{font-size:12px;color:#86868b;font-weight:500}
+  .day-counts{display:flex;gap:6px}
+  .day-count-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:980px}
+  .day-count-badge.feat{background:rgba(52,199,89,.08);color:#34c759}
+  .day-count-badge.fix{background:rgba(255,107,107,.08);color:#ff6b6b}
+  .day-count-badge.refactor{background:rgba(88,86,214,.08);color:#5856d6}
+  [data-theme="dark"] .day-date{color:#e2e8f0}
+  [data-theme="dark"] .day-relative{color:#64748b}
+  [data-theme="dark"] .day-count-badge.feat{background:rgba(74,222,128,.1);color:#4ade80}
+  [data-theme="dark"] .day-count-badge.fix{background:rgba(248,113,113,.1);color:#f87171}
+  [data-theme="dark"] .day-count-badge.refactor{background:rgba(167,139,250,.1);color:#a78bfa}
+
+  /* Commit entry */
+  .commit-entry{padding:14px 18px;background:rgba(255,255,255,.7);border:1px solid rgba(0,0,0,.04);border-radius:12px;margin-bottom:8px;cursor:pointer;transition:all .2s;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+  .commit-entry:hover{border-color:rgba(0,113,227,.15);box-shadow:0 2px 12px rgba(0,0,0,.05)}
+  .commit-entry.expanded{border-color:#0071e3;box-shadow:0 4px 16px rgba(0,113,227,.08)}
+  [data-theme="dark"] .commit-entry{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.04)}
+  [data-theme="dark"] .commit-entry:hover{border-color:rgba(245,158,11,.15);box-shadow:0 2px 12px rgba(0,0,0,.2)}
+  [data-theme="dark"] .commit-entry.expanded{border-color:#f59e0b;box-shadow:0 4px 16px rgba(245,158,11,.08)}
+
+  .commit-head{display:flex;align-items:center;gap:10px}
+  .commit-icon{font-size:18px;flex-shrink:0;width:28px;text-align:center}
+  .commit-body{flex:1;min-width:0}
+  .commit-msg{font-size:14px;font-weight:600;color:#1d1d1f;line-height:1.4}
+  .commit-meta{font-size:11.5px;color:#aeaeb2;margin-top:2px;display:flex;gap:10px;align-items:center}
+  .commit-sha{font-family:'SF Mono',Menlo,monospace;color:#0071e3;font-weight:500;font-size:11px}
+  [data-theme="dark"] .commit-msg{color:#e2e8f0}
+  [data-theme="dark"] .commit-meta{color:#64748b}
+  [data-theme="dark"] .commit-sha{color:#60a5fa}
+
+  .commit-expand{font-size:11px;color:#aeaeb2;flex-shrink:0;transition:transform .2s}
+  .commit-entry.expanded .commit-expand{transform:rotate(180deg)}
+
+  /* File list (expanded) */
+  .commit-files{display:none;margin-top:12px;padding-top:12px;border-top:1px solid rgba(0,0,0,.06)}
+  .commit-entry.expanded .commit-files{display:block}
+  [data-theme="dark"] .commit-files{border-top-color:rgba(255,255,255,.06)}
+  .cf-label{font-size:10.5px;font-weight:700;color:#86868b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+  [data-theme="dark"] .cf-label{color:#64748b}
+  .cf-list{display:flex;flex-wrap:wrap;gap:4px}
+  .cf-file{font-size:11px;font-family:'SF Mono',Menlo,monospace;padding:3px 8px;border-radius:6px;color:#0071e3;background:rgba(0,113,227,.04)}
+  [data-theme="dark"] .cf-file{color:#60a5fa;background:rgba(96,165,250,.08)}
+
+  /* Range selector */
+  .range-select{padding:6px 14px;border-radius:980px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid rgba(0,0,0,.1);background:#fff;color:#1d1d1f;font-family:inherit;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2386868b'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:30px}
+  [data-theme="dark"] .range-select{background:#1e293b;border-color:rgba(255,255,255,.1);color:#e2e8f0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E")}
+
+  /* Empty */
+  .empty-state{text-align:center;padding:60px 20px;color:#aeaeb2;font-size:14px}
+  .empty-icon{font-size:48px;margin-bottom:12px}
+
+  /* ═══ Responsive ═══ */
+  @media(max-width:768px){
+    .stats-row{gap:8px}
+    .stat-card{min-width:80px;padding:12px 14px}
+    .stat-num{font-size:22px}
+    .timeline{padding-left:28px}
+    .commit-msg{font-size:13px}
+  }
+</style>
+</head>
+<body>
+
+<div class="cc-hero">
+  <h1>变更日志</h1>
+  <div class="cc-hero-sub">项目变更追踪 — Git Commits × Kanban 语义</div>
+</div>
+
+<div class="cc-divider"></div>
+
+<div class="cc-section">
+  <!-- Stats -->
+  <div class="stats-row" id="stats"></div>
+
+  <!-- Filters -->
+  <div class="filter-bar">
+    <span class="filter-label">筛选</span>
+    <button class="filter-btn active" data-type="all" onclick="window._filter('all')">全部</button>
+    <button class="filter-btn" data-type="feat" onclick="window._filter('feat')">✨ 新功能</button>
+    <button class="filter-btn" data-type="fix" onclick="window._filter('fix')">🐛 修复</button>
+    <button class="filter-btn" data-type="refactor" onclick="window._filter('refactor')">♻️ 重构</button>
+    <button class="filter-btn" data-type="other" onclick="window._filter('other')">📌 其他</button>
+    <select class="range-select" id="range-select" onchange="window._changeRange(this.value)">
+      <option value="7">最近 7 天</option>
+      <option value="14">最近 14 天</option>
+      <option value="30" selected>最近 30 天</option>
+      <option value="90">最近 90 天</option>
+    </select>
+  </div>
+
+  <!-- Timeline -->
+  <div id="timeline"></div>
+</div>
+
+<script src="/static/shared-nav.js"></script>
+<script>
+(function(){
+  let allData = null;
+  let activeFilter = 'all';
+  let rangeDays = 30;
+
+  async function init(){
+    await loadData();
+  }
+
+  async function loadData(){
+    try {
+      const res = await CC.fetch('/api/portal/changelog?days=' + rangeDays);
+      allData = await res.json();
+      renderStats();
+      renderTimeline();
+    } catch(e){
+      document.getElementById('timeline').innerHTML = '<div class="error-state">加载变更日志失败: '+esc(e.message)+'</div>';
+    }
+  }
+
+  function renderStats(){
+    let total=0, feats=0, fixes=0, refs=0;
+    (allData.days||[]).forEach(d => {
+      d.commits.forEach(c => {
+        total++;
+        if(c.type==='feat') feats++;
+        else if(c.type==='fix') fixes++;
+        else if(c.type==='refactor') refs++;
+      });
+    });
+    document.getElementById('stats').innerHTML = `
+      <div class="stat-card"><div class="stat-num total-color">${total}</div><div class="stat-label">总提交</div></div>
+      <div class="stat-card"><div class="stat-num feat-color">${feats}</div><div class="stat-label">新功能</div></div>
+      <div class="stat-card"><div class="stat-num fix-color">${fixes}</div><div class="stat-label">修复</div></div>
+      <div class="stat-card"><div class="stat-num ref-color">${refs}</div><div class="stat-label">重构</div></div>
+    `;
+  }
+
+  function renderTimeline(){
+    const container = document.getElementById('timeline');
+    const days = allData.days || [];
+    if(days.length === 0){
+      container.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div>该时段内无变更记录</div>';
+      return;
+    }
+
+    let html = '<div class="timeline">';
+    days.forEach(day => {
+      // Filter commits
+      const commits = activeFilter === 'all'
+        ? day.commits
+        : day.commits.filter(c => c.type === activeFilter);
+      if(commits.length === 0) return;
+
+      const rel = relativeDate(day.date);
+      const cf = day.counts;
+      const badges = [];
+      if(cf.feat) badges.push(`<span class="day-count-badge feat">${cf.feat} 新功能</span>`);
+      if(cf.fix) badges.push(`<span class="day-count-badge fix">${cf.fix} 修复</span>`);
+      if(cf.refactor) badges.push(`<span class="day-count-badge refactor">${cf.refactor} 重构</span>`);
+
+      html += `<div class="day-group">
+        <div class="day-dot"></div>
+        <div class="day-header">
+          <span class="day-date">${day.date}</span>
+          <span class="day-relative">${rel}</span>
+          <span class="day-counts">${badges.join('')}</span>
+        </div>
+        ${commits.map(c => renderCommit(c)).join('')}
+      </div>`;
+    });
+    html += '</div>';
+
+    if(html === '<div class="timeline"></div>'){
+      html = '<div class="empty-state"><div class="empty-icon">🔍</div>该筛选条件下无匹配记录</div>';
+    }
+    container.innerHTML = html;
+  }
+
+  function renderCommit(c){
+    const filesHtml = c.files.length > 0
+      ? `<div class="cf-label">变更文件 (${c.files.length})</div><div class="cf-list">${c.files.map(f => `<span class="cf-file">${esc(f)}</span>`).join('')}</div>`
+      : '<div class="cf-label">无文件变更信息</div>';
+
+    return `<div class="commit-entry" onclick="window._toggleCommit(this)">
+      <div class="commit-head">
+        <span class="commit-icon">${c.icon}</span>
+        <div class="commit-body">
+          <div class="commit-msg">${esc(c.display)}</div>
+          <div class="commit-meta">
+            <span class="commit-sha">${c.sha}</span>
+            <span>${c.time}</span>
+            ${c.files.length ? '<span>' + c.files.length + ' 文件</span>' : ''}
+          </div>
+        </div>
+        <span class="commit-expand">▼</span>
+      </div>
+      <div class="commit-files">${filesHtml}</div>
+    </div>`;
+  }
+
+  window._toggleCommit = function(el){
+    el.classList.toggle('expanded');
+  };
+
+  window._filter = function(type){
+    activeFilter = type;
+    document.querySelectorAll('.filter-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.type === type);
+    });
+    renderTimeline();
+  };
+
+  window._changeRange = function(days){
+    rangeDays = parseInt(days);
+    loadData();
+  };
+
+  function relativeDate(dateStr){
+    const today = new Date().toISOString().slice(0,10);
+    const yesterday = new Date(Date.now()-86400000).toISOString().slice(0,10);
+    if(dateStr === today) return '今天';
+    if(dateStr === yesterday) return '昨天';
+    const diff = Math.floor((new Date(today) - new Date(dateStr)) / 86400000);
+    return diff + ' 天前';
+  }
+
+  function esc(s){
+    if(!s) return '';
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

@@ -208,6 +208,115 @@ def portal_earlyrise():
     passed = row["passed"] if row and row["passed"] else 0
     return {"streak": streak, "total": total, "passed": passed}
 
+# ── Changelog (git log aggregation) ──────────────────────────────────────────
+
+import subprocess as _sp
+import datetime as _dt
+
+@router.get("/api/portal/changelog")
+def portal_changelog(days: int = 30):
+    """Generate changelog from git log, grouped by day and type."""
+    repo_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    since = (_dt.datetime.now() - _dt.timedelta(days=days)).strftime("%Y-%m-%d")
+    try:
+        raw = _sp.check_output(
+            ["git", "log", f"--since={since}", "--pretty=format:%h|%ai|%s|%an"],
+            cwd=repo_dir, stderr=_sp.STDOUT, text=True
+        )
+    except Exception:
+        return {"days": [], "total": 0}
+
+    if not raw.strip():
+        return {"days": [], "total": 0}
+
+    # Parse commits
+    commits = []
+    for line in raw.strip().split("\n"):
+        parts = line.split("|", 3)
+        if len(parts) != 4:
+            continue
+        sha, date_str, msg, author = parts
+        # Parse type from conventional commit
+        msg_lower = msg.lower()
+        if msg_lower.startswith("feat"):
+            ctype = "feat"
+            icon = "✨"
+        elif msg_lower.startswith("fix"):
+            ctype = "fix"
+            icon = "🐛"
+        elif msg_lower.startswith("refactor"):
+            ctype = "refactor"
+            icon = "♻️"
+        elif msg_lower.startswith("docs"):
+            ctype = "docs"
+            icon = "📝"
+        elif msg_lower.startswith("chore"):
+            ctype = "chore"
+            icon = "🔧"
+        elif msg_lower.startswith("style"):
+            ctype = "style"
+            icon = "💎"
+        elif msg_lower.startswith("test"):
+            ctype = "test"
+            icon = "🧪"
+        else:
+            ctype = "other"
+            icon = "📌"
+
+        # Get file stats for this commit
+        try:
+            stat_out = _sp.check_output(
+                ["git", "diff-tree", "--no-commit-id", "--stat", "-r", sha],
+                cwd=repo_dir, stderr=_sp.STDOUT, text=True
+            )
+            files_changed = []
+            for sline in stat_out.strip().split("\n"):
+                sline = sline.strip()
+                if not sline or "|" not in sline:
+                    continue
+                fname = sline.split("|")[0].strip()
+                if fname:
+                    files_changed.append(fname)
+        except Exception:
+            files_changed = []
+
+        # Extract date only (YYYY-MM-DD)
+        date_key = date_str[:10]
+
+        # Clean message — strip type prefix for display
+        display_msg = msg
+        for prefix in ["feat:", "fix:", "refactor:", "docs:", "chore:", "style:", "test:"]:
+            if msg_lower.startswith(prefix):
+                display_msg = msg[len(prefix):].strip()
+                break
+
+        commits.append({
+            "sha": sha,
+            "date": date_key,
+            "time": date_str[11:16],
+            "message": msg,
+            "display": display_msg,
+            "type": ctype,
+            "icon": icon,
+            "author": author,
+            "files": files_changed,
+        })
+
+    # Group by day
+    day_map = {}
+    for c in commits:
+        dk = c["date"]
+        if dk not in day_map:
+            day_map[dk] = {"date": dk, "commits": [], "counts": {"feat": 0, "fix": 0, "refactor": 0, "other": 0}}
+        day_map[dk]["commits"].append(c)
+        t = c["type"]
+        day_map[dk]["counts"][t] = day_map[dk]["counts"].get(t, 0) + 1
+
+    # Sort days descending
+    days_list = sorted(day_map.values(), key=lambda d: d["date"], reverse=True)
+    return {"days": days_list, "total": len(commits)}
+
+
 # ── Kanban Bridge proxy ──────────────────────────────────────────────────────
 
 import urllib.request

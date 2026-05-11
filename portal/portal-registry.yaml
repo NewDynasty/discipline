@@ -71,6 +71,13 @@ systems:
     icon: "📋"
     nav: true
 
+  - id: changelog
+    name: 变更日志
+    path: /changelog
+    html: changelog.html
+    icon: "📜"
+    nav: true
+
   # ── 新系统示例（取消注释即生效）──────────────────
   # - id: monitor
   #   name: 监控
