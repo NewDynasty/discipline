@@ -11,6 +11,7 @@ services:
       - EARLY_RISE_STATIC=/portal
       - OBSIDIAN_VAULT=/vault
       - HERMES_HOME=/hermes-home
+      - DISCIPLINE_WEBHOOK_KEY=${DISCIPLINE_WEBHOOK_KEY}
     volumes:
       - ./data:/app/data
       - ${OBSIDIAN_VAULT_PATH:-~/Documents/Obsidian Vault}:/vault:ro
