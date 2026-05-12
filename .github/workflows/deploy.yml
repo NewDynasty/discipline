@@ -12,27 +12,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # 需要完整历史来生成 changelog
+          fetch-depth: 0
 
       - name: Generate Changelog
         id: changelog
         run: |
-          # 获取上一次成功部署的 commit SHA（从 github ref 获取）
-          # 对于 push 事件，比较 before...after 之间的 commits
           if [ "${{ github.event_name }}" = "push" ]; then
             BEFORE="${{ github.event.before }}"
             AFTER="${{ github.event.after }}"
-            # 获取 commit 列表（SHA + 第一行 message）
             CHANGELOG=$(git log --format="- \`%h\` %s" "${BEFORE}..${AFTER}" 2>/dev/null || echo "- \`${GITHUB_SHA:0:7}\` $(git log -1 --format=%s)")
           else
-            # 手动触发时只取最新一条
             CHANGELOG="- \`${GITHUB_SHA:0:7}\` $(git log -1 --format=%s)"
           fi
-          # 转义换行为 \\n 供 JSON 使用
-          CHANGELOG_JSON=$(echo "$CHANGELOG" | jq -Rs 'gsub("\n"; "\\\\n")' | tr -d '"')
-          echo "changelog=${CHANGELOG_JSON}" >> $GITHUB_OUTPUT
-          echo "=== Changelog ==="
-          echo "$CHANGELOG"
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -45,46 +39,11 @@ jobs:
             bash deploy/deploy.sh
           script_stop: true
 
-      - name: Notify Feishu on Success
-        if: success()
+      - name: Notify Feishu
+        if: always()
         run: |
-          COMMIT_SHA="${GITHUB_SHA:0:7}"
-          CHANGELOG="${{ steps.changelog.outputs.changelog }}"
-          curl -s -X POST \
-            '${{ secrets.FEISHU_WEBHOOK_URL }}' \
-            -H 'Content-Type: application/json' \
-            -d "{
-              \"msg_type\": \"interactive\",
-              \"card\": {
-                \"header\": {
-                  \"title\": { \"tag\": \"plain_text\", \"content\": \"✅ 部署成功\" },
-                  \"template\": \"green\"
-                },
-                \"elements\": [
-                  { \"tag\": \"div\", \"text\": { \"tag\": \"lark_md\", \"content\": \"**变更内容**:\\n${CHANGELOG}\\n**github推送**\" } },
-                  { \"tag\": \"action\", \"actions\": [{ \"tag\": \"button\", \"text\": { \"tag\": \"plain_text\", \"content\": \"查看 Actions\" }, \"url\": \"https://github.com/${{ github.repository }}/actions\", \"type\": \"primary\" }] }
-                ]
-              }
-            }"
-
-      - name: Notify Feishu on Failure
-        if: failure()
-        run: |
-          COMMIT_SHA="${GITHUB_SHA:0:7}"
-          CHANGELOG="${{ steps.changelog.outputs.changelog }}"
-          curl -s -X POST \
-            '${{ secrets.FEISHU_WEBHOOK_URL }}' \
-            -H 'Content-Type: application/json' \
-            -d "{
-              \"msg_type\": \"interactive\",
-              \"card\": {
-                \"header\": {
-                  \"title\": { \"tag\": \"plain_text\", \"content\": \"❌ 部署失败\" },
-                  \"template\": \"red\"
-                },
-                \"elements\": [
-                  { \"tag\": \"div\", \"text\": { \"tag\": \"lark_md\", \"content\": \"**变更内容**:\\n${CHANGELOG}\\n**github推送**\" } },
-                  { \"tag\": \"action\", \"actions\": [{ \"tag\": \"button\", \"text\": { \"tag\": \"plain_text\", \"content\": \"查看日志\" }, \"url\": \"https://github.com/${{ github.repository }}/actions\", \"type\": \"danger\" }] }
-                ]
-              }
-            }"
+          python3 deploy/notify_feishu.py
+        env:
+          FEISHU_WEBHOOK_URL: ${{ secrets.FEISHU_WEBHOOK_URL }}
+          DEPLOY_STATUS: ${{ job.status }}
+          DEPLOY_CHANGELOG: ${{ steps.changelog.outputs.changelog }}
