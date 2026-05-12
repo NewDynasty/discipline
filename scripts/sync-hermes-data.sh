@@ -1,11 +1,11 @@
 #!/bin/bash
 # sync-hermes-data.sh — 同步本地 Hermes 数据到 ECS
-# 用途：让 ECS 上的 knowledge API 能读取 skills/knowledge 数据
 #
 # 同步内容:
-#   ~/.hermes/skills/     → /opt/hermes-data/skills/
-#   ~/.hermes/knowledge/  → /opt/hermes-data/knowledge/
-#   ~/Documents/Obsidian Vault/ → 已通过 docker-compose volumes 挂载
+#   ~/.hermes/skills/     → /opt/hermes-data/skills/     (知识库 skills 索引)
+#   ~/.hermes/knowledge/  → /opt/hermes-data/knowledge/  (知识库 decisions/experts/blackboard)
+#   ~/.hermes/memories/   → /opt/hermes-data/memories/   (知识库 MEMORY.md + rollout_summaries)
+#   ~/.hermes/usage/      → /opt/hermes-data/usage/      (models 页面用量数据)
 
 set -euo pipefail
 
@@ -14,7 +14,7 @@ ECS_DATA_DIR="/opt/hermes-data"
 HERMES_HOME="${HERMES_HOME:-$HOME/.hermes}"
 
 # 确保远程目录存在
-ssh -o ConnectTimeout=10 "$ECS_HOST" "mkdir -p $ECS_DATA_DIR/skills $ECS_DATA_DIR/knowledge"
+ssh -o ConnectTimeout=10 "$ECS_HOST" "mkdir -p $ECS_DATA_DIR/{skills,knowledge,memories,usage}"
 
 # 同步 skills
 echo "📦 同步 skills..."
@@ -31,6 +31,14 @@ if [ -d "$HERMES_HOME/memories" ]; then
   echo "📦 同步 memories..."
   rsync -az --delete --exclude '__pycache__' \
     "$HERMES_HOME/memories/" "$ECS_HOST:$ECS_DATA_DIR/memories/"
+fi
+
+# 同步 usage（models 页面用量数据，只同步 calibration 和统计文件）
+if [ -d "$HERMES_HOME/usage" ]; then
+  echo "📦 同步 usage..."
+  rsync -az --delete \
+    --include='*.json' --include='*/' --exclude='*' \
+    "$HERMES_HOME/usage/" "$ECS_HOST:$ECS_DATA_DIR/usage/"
 fi
 
 echo "✅ 同步完成 $(date '+%Y-%m-%d %H:%M:%S')"

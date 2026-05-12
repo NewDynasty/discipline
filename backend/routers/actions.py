@@ -136,7 +136,8 @@ def action_trigger_cron(request: Request, body: dict = None):
 @router.get("/api/usage")
 def api_usage():
     """Return AI usage data from calibration files."""
-    usage_dir = os.path.expanduser("~/.hermes/usage")
+    hermes_home = os.environ.get("HERMES_HOME", os.path.expanduser("~/.hermes"))
+    usage_dir = os.path.join(hermes_home, "usage")
     result = {}
     for f in glob.glob(os.path.join(usage_dir, "*calibration*.json")):
         name = os.path.basename(f).replace(".json", "")
