@@ -8,9 +8,15 @@ cd "$DEPLOY_DIR"
 
 echo "=== Deploy Start $(date '+%Y-%m-%d %H:%M:%S') ==="
 
-# 1. 拉取最新代码
-echo "[1/4] git pull..."
-git fetch origin
+# 1. 拉取最新代码（加重试，国内连 GitHub 经常超时）
+echo "[1/4] git pull (with retry)..."
+for i in $(seq 1 3); do
+  if git fetch origin; then
+    break
+  fi
+  echo "  fetch attempt $i failed, retrying in 10s..."
+  sleep 10
+done
 git reset --hard origin/main
 
 # 2. 加载环境变量

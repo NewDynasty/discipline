@@ -322,7 +322,7 @@ def portal_changelog(days: int = 30):
 import urllib.request
 import urllib.error
 
-KANBAN_BRIDGE = "http://localhost:27124"
+KANBAN_BRIDGE = "http://host.docker.internal:27124"
 
 @router.api_route("/api/portal/kanban-bridge/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
 def kanban_bridge_proxy(path: str = ""):
