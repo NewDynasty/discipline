@@ -1,0 +1,64 @@
+name: Deploy to ECS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # 支持手动触发
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.ECS_HOST }}
+          username: ${{ secrets.ECS_USERNAME }}
+          key: ${{ secrets.ECS_SSH_KEY }}
+          script: |
+            cd /opt/discipline-git
+            bash deploy/deploy.sh
+          script_stop: true
+
+      - name: Notify Feishu on Success
+        if: success()
+        run: |
+          COMMIT_SHA="${GITHUB_SHA:0:7}"
+          COMMIT_MSG=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/commits/${GITHUB_SHA}" \
+            | jq -r '.commit.message' | head -1)
+          curl -s -X POST \
+            '${{ secrets.FEISHU_WEBHOOK_URL }}' \
+            -H 'Content-Type: application/json' \
+            -d "{
+              \"msg_type\": \"interactive\",
+              \"card\": {
+                \"header\": {
+                  \"title\": { \"tag\": \"plain_text\", \"content\": \"✅ 部署成功\" },
+                  \"template\": \"green\"
+                },
+                \"elements\": [
+                  { \"tag\": \"div\", \"text\": { \"tag\": \"lark_md\", \"content\": \"**commit**: \`${COMMIT_SHA}\`\\n**message**: ${COMMIT_MSG}\\n**github推送**\" } }
+                ]
+              }
+            }"
+
+      - name: Notify Feishu on Failure
+        if: failure()
+        run: |
+          COMMIT_SHA="${GITHUB_SHA:0:7}"
+          curl -s -X POST \
+            '${{ secrets.FEISHU_WEBHOOK_URL }}' \
+            -H 'Content-Type: application/json' \
+            -d "{
+              \"msg_type\": \"interactive\",
+              \"card\": {
+                \"header\": {
+                  \"title\": { \"tag\": \"plain_text\", \"content\": \"❌ 部署失败\" },
+                  \"template\": \"red\"
+                },
+                \"elements\": [
+                  { \"tag\": \"div\", \"text\": { \"tag\": \"lark_md\", \"content\": \"**commit**: \`${COMMIT_SHA}\`\\n**查看日志**: https://github.com/${{ github.repository }}/actions\\n**github推送**\" } }
+                ]
+              }
+            }"

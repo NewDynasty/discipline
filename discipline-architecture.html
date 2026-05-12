@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Discipline 架构图</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#020617;color:#e2e8f0;font-family:'JetBrains Mono',monospace;min-height:100vh;padding:32px}
+.header{text-align:center;margin-bottom:20px}
+.header h1{font-size:22px;font-weight:700;letter-spacing:-0.5px}
+.header .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#22d3ee;margin-right:8px;animation:pulse 2s infinite}
+.header p{color:#94a3b8;font-size:12px;margin-top:4px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.diagram-card{background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:16px;max-width:1000px;margin:0 auto}
+.card-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:1000px;margin:20px auto 0}
+.card{background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:16px}
+.card-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.card-dot{width:8px;height:8px;border-radius:50%}
+.card-dot.cyan{background:#22d3ee}.card-dot.emerald{background:#34d399}.card-dot.amber{background:#fbbf24}.card-dot.violet{background:#a78bfa}
+.card h3{font-size:12px;font-weight:600}
+.card ul{list-style:none;font-size:10px;color:#94a3b8}
+.card ul li{margin-top:4px}
+.footer{text-align:center;color:#475569;font-size:10px;margin-top:20px}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1><span class="dot"></span>Discipline 架构图</h1>
+  <p>本地 Docker 代理 → 云端唯一数据源 · 零本地 DB · 零同步</p>
+</div>
+
+<div class="diagram-card">
+<svg viewBox="0 0 960 480" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+  </pattern>
+  <marker id="arr" viewBox="0 0 10 7" refX="9" refY="3.5" markerWidth="8" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 3.5 L 0 7 z" fill="#64748b"/></marker>
+  <marker id="arr-c" viewBox="0 0 10 7" refX="9" refY="3.5" markerWidth="8" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 3.5 L 0 7 z" fill="#22d3ee"/></marker>
+  <marker id="arr-a" viewBox="0 0 10 7" refX="9" refY="3.5" markerWidth="8" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 3.5 L 0 7 z" fill="#fbbf24"/></marker>
+  <marker id="arr-v" viewBox="0 0 10 7" refX="9" refY="3.5" markerWidth="8" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 3.5 L 0 7 z" fill="#a78bfa"/></marker>
+</defs>
+
+<!-- Background -->
+<rect width="960" height="480" fill="url(#grid)"/>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- Region: 本地 macOS -->
+<!-- ════════════════════════════════════════════════════════ -->
+<rect x="20" y="20" width="440" height="440" rx="12" fill="none" stroke="#34d399" stroke-width="1.5" stroke-dasharray="8,4" opacity="0.5"/>
+<text x="40" y="46" fill="#34d399" font-size="11" font-weight="600">📍 本地 macOS</text>
+
+<!-- Browser -->
+<rect x="50" y="70" width="380" height="56" rx="6" fill="#0f172a"/>
+<rect x="50" y="70" width="380" height="56" rx="6" fill="rgba(8,51,68,0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+<text x="240" y="96" fill="#e2e8f0" font-size="12" text-anchor="middle" font-weight="600">🌐 Chrome 浏览器</text>
+<text x="240" y="114" fill="#94a3b8" font-size="9" text-anchor="middle">http://localhost:8898/portal</text>
+
+<!-- Docker cc-discipline :8898 -->
+<rect x="50" y="185" width="380" height="120" rx="6" fill="#0f172a"/>
+<rect x="50" y="185" width="380" height="120" rx="6" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
+<text x="240" y="212" fill="#e2e8f0" font-size="12" text-anchor="middle" font-weight="600">🐳 cc-discipline :8898</text>
+<text x="240" y="232" fill="#34d399" font-size="9" text-anchor="middle" font-weight="500">docker-compose.local.yml</text>
+<line x1="100" y1="245" x2="380" y2="245" stroke="#1e293b" stroke-width="0.5"/>
+<text x="240" y="264" fill="#94a3b8" font-size="9" text-anchor="middle">portal 静态文件（HTML/CSS/JS）→ 本地直接返回</text>
+<text x="240" y="282" fill="#22d3ee" font-size="9" text-anchor="middle" font-weight="500">/api/* → HTTPS 代理转发到云端</text>
+<text x="240" y="298" fill="#94a3b8" font-size="8" text-anchor="middle">无本地 DB · 无同步 · API_UPSTREAM=junethebest.cn</text>
+
+<!-- Arrow: Browser → Docker -->
+<line x1="240" y1="126" x2="240" y2="181" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arr-c)"/>
+<rect x="252" y="144" width="56" height="14" rx="4" fill="rgba(8,51,68,0.9)" stroke="#22d3ee" stroke-width="0.5"/>
+<text x="280" y="154" fill="#22d3ee" font-size="7" text-anchor="middle">页面 + API</text>
+
+<!-- Strikethrough: LaunchAgent (disabled) -->
+<rect x="120" y="355" width="240" height="50" rx="6" fill="rgba(30,41,59,0.3)" stroke="#475569" stroke-width="1" stroke-dasharray="4,4"/>
+<text x="240" y="377" fill="#475569" font-size="10" text-anchor="middle" font-weight="500">LaunchAgent :8898</text>
+<text x="240" y="393" fill="#475569" font-size="8" text-anchor="middle">已停用（.disabled）</text>
+<line x1="130" y1="380" x2="350" y2="380" stroke="#475569" stroke-width="1.5"/>
+
+<!-- Strikethrough: old :8899 -->
+<rect x="120" y="420" width="240" height="32" rx="6" fill="rgba(30,41,59,0.3)" stroke="#475569" stroke-width="1" stroke-dasharray="4,4"/>
+<text x="240" y="440" fill="#475569" font-size="9" text-anchor="middle">Docker :8899 旧容器（已删除）</text>
+
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- Region: 阿里云 ECS -->
+<!-- ════════════════════════════════════════════════════════ -->
+<rect x="500" y="20" width="440" height="440" rx="12" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="8,4" opacity="0.5"/>
+<text x="520" y="46" fill="#fbbf24" font-size="11" font-weight="600">☁️ 阿里云 ECS</text>
+<text x="520" y="60" fill="#94a3b8" font-size="8">47.108.143.237 · junethebest.cn</text>
+
+<!-- Nginx -->
+<rect x="530" y="80" width="380" height="56" rx="6" fill="#0f172a"/>
+<rect x="530" y="80" width="380" height="56" rx="6" fill="rgba(120,53,15,0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+<text x="720" y="106" fill="#e2e8f0" font-size="12" text-anchor="middle" font-weight="600">🔀 Nginx</text>
+<text x="720" y="124" fill="#94a3b8" font-size="9" text-anchor="middle">:443 HTTPS → :8898 Docker 容器</text>
+
+<!-- Cloud Docker :8898 -->
+<rect x="530" y="190" width="380" height="90" rx="6" fill="#0f172a"/>
+<rect x="530" y="190" width="380" height="90" rx="6" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
+<text x="720" y="216" fill="#e2e8f0" font-size="12" text-anchor="middle" font-weight="600">🐳 discipline-git :8898</text>
+<text x="720" y="236" fill="#34d399" font-size="9" text-anchor="middle" font-weight="500">FastAPI + Uvicorn（完整服务）</text>
+<text x="720" y="254" fill="#94a3b8" font-size="9" text-anchor="middle">checkin / stats / heatmap API</text>
+<text x="720" y="270" fill="#94a3b8" font-size="8" text-anchor="middle">/opt/discipline-git/</text>
+
+<!-- SQLite (唯一数据源) -->
+<rect x="590" y="340" width="260" height="80" rx="6" fill="#0f172a"/>
+<rect x="590" y="340" width="260" height="80" rx="6" fill="rgba(76,29,149,0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+<text x="720" y="368" fill="#e2e8f0" font-size="12" text-anchor="middle" font-weight="600">💾 SQLite</text>
+<text x="720" y="386" fill="#94a3b8" font-size="9" text-anchor="middle">earlyrise.db</text>
+<text x="720" y="404" fill="#34d399" font-size="9" text-anchor="middle" font-weight="600">✅ 唯一数据源</text>
+
+<!-- Arrows: Cloud internal -->
+<line x1="720" y1="136" x2="720" y2="186" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#arr-a)"/>
+<line x1="720" y1="280" x2="720" y2="336" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arr-v)"/>
+<text x="732" y="312" fill="#94a3b8" font-size="8">读写</text>
+
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- Cross-region: 8898 proxy → Cloud -->
+<!-- ════════════════════════════════════════════════════════ -->
+<path d="M 430 245 C 470 245, 490 108, 526 108" fill="none" stroke="#22d3ee" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arr-c)"/>
+<rect x="453" y="150" width="82" height="32" rx="6" fill="rgba(8,51,68,0.9)" stroke="#22d3ee" stroke-width="0.5"/>
+<text x="494" y="163" fill="#22d3ee" font-size="7" text-anchor="middle" font-weight="600">/api/* 代理</text>
+<text x="494" y="176" fill="#22d3ee" font-size="7" text-anchor="middle">HTTPS</text>
+
+</svg>
+</div>
+
+<div class="card-grid">
+  <div class="card">
+    <div class="card-header"><div class="card-dot cyan"></div><h3>本地 Docker :8898</h3></div>
+    <ul>
+      <li>• portal 静态文件本地返回</li>
+      <li>• /api/* 代理到云端 HTTPS</li>
+      <li>• 无本地 DB，零同步</li>
+      <li>• docker-compose.local.yml</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-dot amber"></div><h3>云端 ECS 生产</h3></div>
+    <ul>
+      <li>• Nginx HTTPS 反代</li>
+      <li>• Docker FastAPI 完整服务</li>
+      <li>• SQLite 唯一数据源</li>
+      <li>• junethebest.cn 公网访问</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-dot violet"></div><h3>已清理</h3></div>
+    <ul>
+      <li>• LaunchAgent :8898 已停用</li>
+      <li>• Docker :8899 旧容器已删</li>
+      <li>• 本地 earlyrise.db 已删</li>
+      <li>• Datasette 容器已停</li>
+    </ul>
+  </div>
+</div>
+
+<div class="footer">Discipline Architecture · 2026-05-12 · 单数据源架构</div>
+</body>
+</html>

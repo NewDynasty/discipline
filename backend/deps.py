@@ -99,11 +99,16 @@ def init_db():
     conn = get_db()
     conn.executescript("""
         CREATE TABLE IF NOT EXISTS checkins (
-            date TEXT PRIMARY KEY,
-            wake_time TEXT NOT NULL,
+            date TEXT,
+            checkin_type TEXT NOT NULL DEFAULT 'wake',
+            wake_time TEXT,
+            sleep_time TEXT,
+            exercise_type TEXT,
+            exercise_duration INTEGER,
             pass INTEGER NOT NULL DEFAULT 0,
             created_at TEXT DEFAULT (datetime('now')),
-            updated_at TEXT DEFAULT (datetime('now'))
+            updated_at TEXT DEFAULT (datetime('now')),
+            PRIMARY KEY (date, checkin_type)
         );
         CREATE TABLE IF NOT EXISTS tokens (
             token TEXT PRIMARY KEY,
@@ -111,6 +116,29 @@ def init_db():
             expires_at TEXT NOT NULL
         );
     """)
+    # 迁移旧表：如果 checkins 还是旧 schema（单列主键 date），需要迁移
+    try:
+        conn.execute("SELECT checkin_type FROM checkins LIMIT 0")
+    except sqlite3.OperationalError:
+        # 旧 schema 存在，执行迁移
+        conn.executescript("""
+            ALTER TABLE checkins RENAME TO checkins_old;
+            CREATE TABLE checkins (
+                date TEXT,
+                checkin_type TEXT NOT NULL DEFAULT 'wake',
+                wake_time TEXT,
+                sleep_time TEXT,
+                exercise_type TEXT,
+                exercise_duration INTEGER,
+                pass INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT DEFAULT (datetime('now')),
+                PRIMARY KEY (date, checkin_type)
+            );
+            INSERT INTO checkins (date, checkin_type, wake_time, pass, created_at, updated_at)
+                SELECT date, 'wake', wake_time, pass, created_at, updated_at FROM checkins_old;
+            DROP TABLE checkins_old;
+        """)
     conn.commit()
     conn.close()
 
@@ -154,9 +182,21 @@ class LoginRequest(BaseModel):
 class CheckinRequest(BaseModel):
     wake_time: str  # HH:MM
 
+class SleepCheckinRequest(BaseModel):
+    sleep_time: str  # HH:MM，计划入睡时间
+    target_time: str = "23:00"  # 目标入睡时间，默认23:00
+
+class ExerciseCheckinRequest(BaseModel):
+    exercise_type: str  # 运动类型：run/swim/gym/yoga/walk/other
+    duration: int  # 运动时长（分钟）
+
 class CheckinResponse(BaseModel):
     date: str
-    wake_time: str
+    checkin_type: str = "wake"
+    wake_time: Optional[str] = None
+    sleep_time: Optional[str] = None
+    exercise_type: Optional[str] = None
+    exercise_duration: Optional[int] = None
     pass_: bool
     streak: int
 
@@ -170,12 +210,13 @@ class StatsResponse(BaseModel):
     rate: float
 
 # --- Helpers ---
-def _calc_streak() -> int:
+def _calc_streak(checkin_type: str = "wake") -> int:
     from datetime import date, timedelta
     with db_conn() as conn:
         rows = conn.execute(
             """SELECT date, pass FROM checkins
-               WHERE pass = 1 ORDER BY date DESC"""
+               WHERE pass = 1 AND checkin_type = ? ORDER BY date DESC""",
+            (checkin_type,)
         ).fetchall()
     if not rows:
         return 0

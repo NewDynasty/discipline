@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>打卡方式 · Checkin Methods</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="stylesheet" href="/static/cc-styles.css">
+<style>
+  .method-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:24px}
+  .method-card{background:rgba(255,255,255,.7);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:16px;border:1px solid rgba(0,0,0,.06);overflow:hidden;transition:transform .2s,box-shadow .2s}
+  .method-card:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.08)}
+  .method-head{padding:24px 24px 16px;border-bottom:1px solid rgba(0,0,0,.04)}
+  .method-icon{font-size:40px;margin-bottom:8px}
+  .method-name{font-size:20px;font-weight:700;color:#1d1d1f;margin-bottom:4px}
+  .method-tag{display:inline-block;font-size:11px;font-weight:600;padding:3px 10px;border-radius:980px;margin-bottom:8px}
+  .method-tag.web{background:#e3f2fd;color:#0071e3}
+  .method-tag.api{background:#e8f5e9;color:#30d158}
+  .method-tag.auto{background:#fff3e0;color:#f59e0b}
+  .method-desc{font-size:13px;color:#86868b;line-height:1.5}
+  .method-body{padding:20px 24px}
+  .method-section{margin-bottom:16px}
+  .method-section:last-child{margin-bottom:0}
+  .ms-title{font-size:11px;font-weight:600;color:#86868b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+
+  /* Mock UI */
+  .mock-portal{background:#f5f5f7;border-radius:12px;padding:16px;border:1px solid rgba(0,0,0,.04)}
+  .mock-bar{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .mock-bar:last-child{margin-bottom:0}
+  .mock-btn{background:#111;color:#fff;border:none;padding:8px 24px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer}
+  .mock-btn.sleep{background:#5856d6}
+  .mock-btn.exercise{background:#ff9500}
+  .mock-input{border:1px solid rgba(0,0,0,.12);border-radius:8px;padding:6px 10px;font-size:12px;width:72px;background:#fff}
+  .mock-select{border:1px solid rgba(0,0,0,.12);border-radius:8px;padding:6px 10px;font-size:12px;background:#fff}
+  .mock-label{font-size:13px;font-weight:500;color:#1d1d1f}
+  .mock-done{color:#34c759;font-size:12px;font-weight:600}
+
+  /* Code block */
+  .code-block{background:#1e1e2e;border-radius:10px;padding:14px 16px;font-family:'SF Mono',Menlo,monospace;font-size:12px;line-height:1.6;color:#cdd6f4;overflow-x:auto;position:relative}
+  .code-block .kw{color:#cba6f7} .code-block .str{color:#a6e3a1} .code-block .cm{color:#6c7086}
+  .code-block .url{color:#89b4fa} .code-block .hdr{color:#f9e2af} .code-block .num{color:#fab387}
+  .copy-btn{position:absolute;top:8px;right:8px;background:rgba(255,255,255,.1);border:none;color:#94a3b8;padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;transition:all .15s}
+  .copy-btn:hover{background:rgba(255,255,255,.2);color:#fff}
+
+  /* Flow diagram */
+  .flow{display:flex;flex-direction:column;gap:8px}
+  .flow-step{display:flex;align-items:center;gap:10px;font-size:12px;color:#1d1d1f}
+  .flow-dot{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+  .flow-dot.green{background:#e8f8ed;color:#34c759}
+  .flow-dot.blue{background:#e3f2fd;color:#0071e3}
+  .flow-dot.amber{background:#fff3e0;color:#f59e0b}
+  .flow-line{width:1px;height:8px;background:rgba(0,0,0,.1);margin-left:12px}
+
+  /* Feature list */
+  .feat-list{list-style:none;padding:0}
+  .feat-list li{font-size:12.5px;color:#1d1d1f;padding:4px 0;display:flex;align-items:flex-start;gap:6px}
+  .feat-list li::before{content:'✓';color:#34c759;font-weight:700;flex-shrink:0}
+
+  /* Responsive */
+  @media(max-width:900px){.method-grid{grid-template-columns:1fr}}
+  [data-theme="dark"] .method-card{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.08)}
+  [data-theme="dark"] .method-card:hover{box-shadow:0 12px 40px rgba(0,0,0,.3)}
+  [data-theme="dark"] .method-name{color:#e2e8f0}
+  [data-theme="dark"] .method-desc{color:#94a3b8}
+  [data-theme="dark"] .mock-portal{background:#1e293b;border-color:rgba(255,255,255,.06)}
+  [data-theme="dark"] .mock-label{color:#e2e8f0}
+  [data-theme="dark"] .mock-input,[data-theme="dark"] .mock-select{background:#1e293b;border-color:#334155;color:#e2e8f0}
+  [data-theme="dark"] .flow-step{color:#e2e8f0}
+  [data-theme="dark"] .feat-list li{color:#e2e8f0}
+  [data-theme="dark"] .ms-title{color:#64748b}
+</style>
+</head>
+<body>
+
+<div class="cc-hero">
+  <h1>打卡方式</h1>
+  <p class="cc-hero-sub">三种途径，随时随地完成早起 / 早睡 / 运动打卡。</p>
+</div>
+
+<div class="method-grid">
+
+  <!-- ═══ Method 1: Portal ═══ -->
+  <div class="method-card">
+    <div class="method-head">
+      <div class="method-icon">🌐</div>
+      <div class="method-name">Portal 页面</div>
+      <span class="method-tag web">Web UI</span>
+      <div class="method-desc">浏览器打开 Portal 首页，一键打卡。最直观，支持三种打卡类型。</div>
+    </div>
+    <div class="method-body">
+      <div class="method-section">
+        <div class="ms-title">界面预览</div>
+        <div class="mock-portal">
+          <!-- Tabs -->
+          <div style="display:flex;gap:4px;margin-bottom:10px;border-bottom:1px solid rgba(0,0,0,.06);padding-bottom:4px">
+            <span style="padding:4px 12px;font-size:12px;font-weight:600;color:#0071e3;background:rgba(0,113,227,.08);border-radius:6px 6px 0 0">☀️ 早起</span>
+            <span style="padding:4px 12px;font-size:12px;color:#86868b">🌙 早睡</span>
+            <span style="padding:4px 12px;font-size:12px;color:#86868b">🏃 运动</span>
+          </div>
+          <!-- Wake -->
+          <div class="mock-bar">
+            <span style="font-size:16px">☀️</span>
+            <span class="mock-label">今日尚未打卡</span>
+            <button class="mock-btn">打卡</button>
+          </div>
+          <!-- Sleep -->
+          <div class="mock-bar" style="opacity:.5">
+            <span style="font-size:16px">🌙</span>
+            <span class="mock-label">今日尚未打卡</span>
+            <input class="mock-input" type="text" value="23:00" readonly>
+            <button class="mock-btn sleep" style="font-size:11px;padding:6px 16px">打卡</button>
+          </div>
+          <!-- Exercise -->
+          <div class="mock-bar" style="opacity:.5">
+            <span style="font-size:16px">🏃</span>
+            <span class="mock-label">今日尚未打卡</span>
+            <select class="mock-select"><option>🏃 跑步</option></select>
+            <input class="mock-input" type="text" value="30" readonly style="width:50px">
+            <button class="mock-btn exercise" style="font-size:11px;padding:6px 16px">打卡</button>
+          </div>
+        </div>
+      </div>
+      <div class="method-section">
+        <div class="ms-title">使用方式</div>
+        <div class="flow">
+          <div class="flow-step"><div class="flow-dot blue">1</div>打开 <strong>junethebest.cn</strong></div>
+          <div class="flow-line"></div>
+          <div class="flow-step"><div class="flow-dot blue">2</div>登录（密码认证）</div>
+          <div class="flow-line"></div>
+          <div class="flow-step"><div class="flow-dot blue">3</div>选择打卡类型，点击按钮</div>
+          <div class="flow-line"></div>
+          <div class="flow-step"><div class="flow-dot green">✓</div>自动记录时间，显示连续天数</div>
+        </div>
+      </div>
+      <div class="method-section">
+        <div class="ms-title">特点</div>
+        <ul class="feat-list">
+          <li>可视化热力图，一眼看月度表现</li>
+          <li>三种打卡类型切换（早起/早睡/运动）</li>
+          <li>统计数据实时展示</li>
+          <li>需要登录认证</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Method 2: Webhook API ═══ -->
+  <div class="method-card">
+    <div class="method-head">
+      <div class="method-icon">🔌</div>
+      <div class="method-name">Webhook API</div>
+      <span class="method-tag api">API</span>
+      <div class="method-desc">HTTP POST 调用，无需浏览器。适合脚本、定时任务、其他服务集成。</div>
+    </div>
+    <div class="method-body">
+      <div class="method-section">
+        <div class="ms-title">请求示例</div>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">复制</button>
+<span class="kw">POST</span> <span class="url">/api/webhook/checkin</span>
+<span class="hdr">X-API-Key</span>: <span class="str">your-webhook-key</span>
+<span class="hdr">Content-Type</span>: <span class="str">application/json</span>
+
+{
+  <span class="str">"wake_time"</span>: <span class="str">"05:30"</span>,
+  <span class="str">"source"</span>: <span class="str">"ha-automation"</span>
+}
+        </div>
+      </div>
+      <div class="method-section">
+        <div class="ms-title">响应</div>
+        <div class="code-block">
+{
+  <span class="str">"ok"</span>: <span class="kw">true</span>,
+  <span class="str">"date"</span>: <span class="str">"2026-05-11"</span>,
+  <span class="str">"wake_time"</span>: <span class="str">"05:30"</span>,
+  <span class="str">"pass"</span>: <span class="kw">true</span>,
+  <span class="str">"streak"</span>: <span class="num">7</span>,
+  <span class="str">"source"</span>: <span class="str">"ha-automation"</span>
+}
+        </div>
+      </div>
+      <div class="method-section">
+        <div class="ms-title">使用场景</div>
+        <ul class="feat-list">
+          <li>curl / Python / 任意 HTTP 客户端</li>
+          <li>不传 body 默认用当前时间</li>
+          <li>X-API-Key 认证，无需登录</li>
+          <li>source 字段追踪来源</li>
+        </ul>
+      </div>
+      <div class="method-section">
+        <div class="ms-title">curl 一行命令</div>
+        <div class="code-block">
+<button class="copy-btn" onclick="copyCode(this)">复制</button>
+<span class="kw">curl</span> -X POST <span class="url">https://junethebest.cn/api/webhook/checkin</span> \
+  -H <span class="str">"X-API-Key: your-key"</span> \
+  -H <span class="str">"Content-Type: application/json"</span> \
+  -d <span class="str">'{"wake_time":"05:30","source":"curl"}'</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Method 3: Automation ═══ -->
+  <div class="method-card">
+    <div class="method-head">
+      <div class="method-icon">⚙️</div>
+      <div class="method-name">自动化触发</div>
+      <span class="method-tag auto">HA / iOS</span>
+      <div class="method-desc">Home Assistant 自动化或 Apple 快捷指令，无感打卡。</div>
+    </div>
+    <div class="method-body">
+      <div class="method-section">
+        <div class="ms-title">方式 A: Home Assistant</div>
+        <div class="flow">
+          <div class="flow-step"><div class="flow-dot amber">1</div>手机离开床（传感器触发）</div>
+          <div class="flow-line"></div>
+          <div class="flow-step"><div class="flow-dot amber">2</div>HA 自动化执行 webhook</div>
+          <div class="flow-line"></div>
+          <div class="flow-step"><div class="flow-dot amber">3</div>记录起床时间 + 连续天数</div>
+        </div>
+        <div class="code-block" style="margin-top:10px">
+          <button class="copy-btn" onclick="copyCode(this)">复制</button>
+<span class="cm"># HA configuration.yaml</span>
+<span class="kw">automation</span>:
+  - <span class="str">alias</span>: <span class="str">"自动早起打卡"</span>
+    <span class="str">trigger</span>:
+      - <span class="str">platform</span>: <span class="str">state</span>
+        <span class="str">entity_id</span>: <span class="str">binary_sensor.bed_occupancy</span>
+        <span class="str">to</span>: <span class="str">"off"</span>
+    <span class="str">action</span>:
+      - <span class="str">service</span>: <span class="str">rest_command.checkin</span>
+
+<span class="kw">rest_command</span>:
+  <span class="str">checkin</span>:
+    <span class="str">url</span>: <span class="url">https://junethebest.cn/api/webhook/checkin</span>
+    <span class="str">method</span>: <span class="str">POST</span>
+    <span class="str">headers</span>:
+      <span class="hdr">X-API-Key</span>: <span class="str">your-webhook-key</span>
+    <span class="str">content_type</span>: <span class="str">"application/json"</span>
+        </div>
+      </div>
+      <div class="method-section">
+        <div class="ms-title">方式 B: Apple 快捷指令</div>
+        <div class="flow">
+          <div class="flow-step"><div class="flow-dot amber">1</div>Siri / NFC / Widget 触发</div>
+          <div class="flow-line"></div>
+          <div class="flow-step"><div class="flow-dot amber">2</div>快捷指令发送 POST 请求</div>
+          <div class="flow-line"></div>
+          <div class="flow-step"><div class="flow-dot green">✓</div>收到通知确认打卡结果</div>
+        </div>
+        <div class="code-block" style="margin-top:10px">
+          <button class="copy-btn" onclick="copyCode(this)">复制</button>
+<span class="cm">快捷指令配置:</span>
+<span class="str">操作</span>: 获取 URL 内容
+<span class="str">URL</span>: <span class="url">https://junethebest.cn/api/webhook/checkin</span>
+<span class="str">方法</span>: POST
+<span class="str">Headers</span>:
+  <span class="hdr">X-API-Key</span>: <span class="str">your-webhook-key</span>
+<span class="str">Body</span> (JSON):
+  {<span class="str">"source"</span>: <span class="str">"ios-shortcut"</span>}
+        </div>
+      </div>
+      <div class="method-section">
+        <div class="ms-title">特点</div>
+        <ul class="feat-list">
+          <li>完全无感，起床自动打卡</li>
+          <li>支持 NFC 标签贴床头触发</li>
+          <li>iOS Widget 一键点击</li>
+          <li>HA 可联动灯光/窗帘</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="text-align:center;margin-top:32px;color:#86868b;font-size:13px">
+  三种方式数据互通 · 共享同一数据库 · 连续天数实时同步
+</div>
+
+<footer class="cc-footer">Command Center · Checkin Methods</footer>
+
+<script src="/static/cc-components.js"></script>
+<script>
+function copyCode(btn){
+  const block=btn.parentElement;
+  const text=block.textContent.replace('复制','').trim();
+  navigator.clipboard.writeText(text).then(()=>{
+    btn.textContent='已复制 ✓';
+    setTimeout(()=>btn.textContent='复制',1500);
+  });
+}
+</script>
+</body>
+</html>

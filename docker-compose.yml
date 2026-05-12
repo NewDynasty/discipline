@@ -15,4 +15,4 @@ services:
     volumes:
       - ./data:/app/data
       - ${OBSIDIAN_VAULT_PATH:-~/Documents/Obsidian Vault}:/vault:ro
-      - /opt/hermes-data:/hermes-home:ro
+      - ${HERMES_DATA_PATH:-/opt/hermes-data}:/hermes-home:ro
