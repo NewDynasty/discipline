@@ -228,3 +228,100 @@ def get_heatmap(checkin_type: str = "wake", _=Depends(verify_token)):
             (checkin_type,)
         ).fetchall()
     return [dict(r) for r in rows]
+
+
+# ── Webhook (HA / iOS 快捷指令) ───────────────────────────────────────────────
+
+WEBHOOK_API_KEY = os.environ.get("DISCIPLINE_WEBHOOK_KEY", "")
+
+
+def _verify_webhook(request: Request):
+    """Verify webhook via X-API-Key header or api_key query param."""
+    api_key = request.headers.get("X-API-Key", "") or request.query_params.get("api_key", "")
+    if not WEBHOOK_API_KEY:
+        raise HTTPException(500, "DISCIPLINE_WEBHOOK_KEY not configured")
+    if api_key != WEBHOOK_API_KEY:
+        raise HTTPException(403, "Invalid API key")
+
+
+@router.post("/api/webhook/checkin")
+async def webhook_checkin(request: Request, _=Depends(_verify_webhook)):
+    """Auto checkin from external triggers (HA, Hermes, iOS shortcuts).
+
+    Accepts optional JSON body:
+    - wake_time (str): HH:MM, defaults to current time
+    - source (str): origin label, e.g. "apple-watch", "ha-automation"
+    """
+    try:
+        body = await request.json() if request.headers.get("content-type", "").startswith("application/json") else {}
+    except Exception:
+        body = {}
+
+    now = datetime.now()
+    wake_time = body.get("wake_time", now.strftime("%H:%M"))
+    source = body.get("source", "webhook")
+
+    try:
+        parts = wake_time.split(":")
+        h, m = int(parts[0]), int(parts[1])
+        assert 0 <= h <= 23 and 0 <= m <= 59
+    except Exception:
+        raise HTTPException(400, f"Invalid wake_time: {wake_time}, expected HH:MM")
+
+    today = date.today().isoformat()
+    passed = 1 if h < 8 or (h == 8 and m == 0) else 0
+
+    with db_conn() as conn:
+        existing = conn.execute(
+            "SELECT date FROM checkins WHERE date=? AND checkin_type='wake'", (today,)
+        ).fetchone()
+        if existing:
+            conn.execute(
+                "UPDATE checkins SET wake_time=?, pass=?, updated_at=datetime('now') WHERE date=? AND checkin_type='wake'",
+                (wake_time, passed, today))
+        else:
+            conn.execute(
+                "INSERT INTO checkins (date, checkin_type, wake_time, pass) VALUES (?,?,?,?)",
+                (today, "wake", wake_time, passed))
+        streak = _calc_streak("wake")
+
+    return {
+        "ok": True,
+        "date": today,
+        "wake_time": wake_time,
+        "pass": bool(passed),
+        "streak": streak,
+        "source": source,
+    }
+
+
+@router.post("/api/webhook/health")
+async def webhook_health(request: Request, _=Depends(_verify_webhook)):
+    """Receive health data from Apple Watch / HA.
+
+    Accepts JSON body:
+    - type (str): "sleep", "heart_rate", "steps", "workout"
+    - data (dict): the health payload
+    - timestamp (str, optional): ISO timestamp
+
+    Currently logs and returns acknowledgement.
+    Future: store in health_data table, trigger automations.
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(400, "Invalid JSON body")
+
+    health_type = body.get("type", "unknown")
+    health_data = body.get("data", {})
+    ts = body.get("timestamp", datetime.now().isoformat())
+
+    # TODO: store in health_data table when ready
+    return {
+        "ok": True,
+        "received": {
+            "type": health_type,
+            "data": health_data,
+            "timestamp": ts,
+        },
+    }
