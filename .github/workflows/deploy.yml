@@ -9,6 +9,31 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 需要完整历史来生成 changelog
+
+      - name: Generate Changelog
+        id: changelog
+        run: |
+          # 获取上一次成功部署的 commit SHA（从 github ref 获取）
+          # 对于 push 事件，比较 before...after 之间的 commits
+          if [ "${{ github.event_name }}" = "push" ]; then
+            BEFORE="${{ github.event.before }}"
+            AFTER="${{ github.event.after }}"
+            # 获取 commit 列表（SHA + 第一行 message）
+            CHANGELOG=$(git log --format="- \`%h\` %s" "${BEFORE}..${AFTER}" 2>/dev/null || echo "- \`${GITHUB_SHA:0:7}\` $(git log -1 --format=%s)")
+          else
+            # 手动触发时只取最新一条
+            CHANGELOG="- \`${GITHUB_SHA:0:7}\` $(git log -1 --format=%s)"
+          fi
+          # 转义换行为 \\n 供 JSON 使用
+          CHANGELOG_JSON=$(echo "$CHANGELOG" | jq -Rs 'gsub("\n"; "\\\\n")' | tr -d '"')
+          echo "changelog=${CHANGELOG_JSON}" >> $GITHUB_OUTPUT
+          echo "=== Changelog ==="
+          echo "$CHANGELOG"
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -24,9 +49,7 @@ jobs:
         if: success()
         run: |
           COMMIT_SHA="${GITHUB_SHA:0:7}"
-          COMMIT_MSG=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/commits/${GITHUB_SHA}" \
-            | jq -r '.commit.message' | head -1)
+          CHANGELOG="${{ steps.changelog.outputs.changelog }}"
           curl -s -X POST \
             '${{ secrets.FEISHU_WEBHOOK_URL }}' \
             -H 'Content-Type: application/json' \
@@ -38,7 +61,8 @@ jobs:
                   \"template\": \"green\"
                 },
                 \"elements\": [
-                  { \"tag\": \"div\", \"text\": { \"tag\": \"lark_md\", \"content\": \"**commit**: \`${COMMIT_SHA}\`\\n**message**: ${COMMIT_MSG}\\n**github推送**\" } }
+                  { \"tag\": \"div\", \"text\": { \"tag\": \"lark_md\", \"content\": \"**变更内容**:\\n${CHANGELOG}\\n**github推送**\" } },
+                  { \"tag\": \"action\", \"actions\": [{ \"tag\": \"button\", \"text\": { \"tag\": \"plain_text\", \"content\": \"查看 Actions\" }, \"url\": \"https://github.com/${{ github.repository }}/actions\", \"type\": \"primary\" }] }
                 ]
               }
             }"
@@ -47,6 +71,7 @@ jobs:
         if: failure()
         run: |
           COMMIT_SHA="${GITHUB_SHA:0:7}"
+          CHANGELOG="${{ steps.changelog.outputs.changelog }}"
           curl -s -X POST \
             '${{ secrets.FEISHU_WEBHOOK_URL }}' \
             -H 'Content-Type: application/json' \
@@ -58,7 +83,8 @@ jobs:
                   \"template\": \"red\"
                 },
                 \"elements\": [
-                  { \"tag\": \"div\", \"text\": { \"tag\": \"lark_md\", \"content\": \"**commit**: \`${COMMIT_SHA}\`\\n**查看日志**: https://github.com/${{ github.repository }}/actions\\n**github推送**\" } }
+                  { \"tag\": \"div\", \"text\": { \"tag\": \"lark_md\", \"content\": \"**变更内容**:\\n${CHANGELOG}\\n**github推送**\" } },
+                  { \"tag\": \"action\", \"actions\": [{ \"tag\": \"button\", \"text\": { \"tag\": \"plain_text\", \"content\": \"查看日志\" }, \"url\": \"https://github.com/${{ github.repository }}/actions\", \"type\": \"danger\" }] }
                 ]
               }
             }"
