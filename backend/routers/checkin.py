@@ -1,5 +1,6 @@
 """Auth + Checkin API — login/logout, checkin (wake/sleep/exercise), stats, records, heatmap."""
 import os
+import json
 import secrets
 from datetime import date, datetime, timedelta
 
@@ -315,13 +316,19 @@ async def webhook_health(request: Request, _=Depends(_verify_webhook)):
     health_type = body.get("type", "unknown")
     health_data = body.get("data", {})
     ts = body.get("timestamp", datetime.now().isoformat())
+    source = body.get("source", "webhook")
 
-    # TODO: store in health_data table when ready
+    with db_conn() as conn:
+        conn.execute(
+            "INSERT INTO health_data (type, data, source, recorded_at) VALUES (?,?,?,?)",
+            (health_type, json.dumps(health_data) if isinstance(health_data, dict) else str(health_data), source, ts),
+        )
+
     return {
         "ok": True,
-        "received": {
+        "stored": {
             "type": health_type,
-            "data": health_data,
+            "source": source,
             "timestamp": ts,
         },
     }

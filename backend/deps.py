@@ -115,6 +115,14 @@ def init_db():
             created_at TEXT DEFAULT (datetime('now')),
             expires_at TEXT NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS health_data (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            type TEXT NOT NULL,
+            data TEXT NOT NULL DEFAULT '{}',
+            source TEXT DEFAULT 'unknown',
+            recorded_at TEXT DEFAULT (datetime('now')),
+            created_at TEXT DEFAULT (datetime('now'))
+        );
     """)
     # 迁移旧表：如果 checkins 还是旧 schema（单列主键 date），需要迁移
     try:
