@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>NutriPick</title>
+  <style>
+    :root {
+      --bg: #1a1a2e;
+      --bg-card: #16213e;
+      --bg-input: #0f1626;
+      --surface: #1f2b47;
+      --border: #2a3a5c;
+      --text: #e8e8f0;
+      --text-dim: #8892a8;
+      --accent: #f5a623;
+      --accent2: #ff6b35;
+      --cal-color: #f5a623;
+      --protein-color: #4fc3f7;
+      --carbs-color: #66bb6a;
+      --fat-color: #fdd835;
+      --sodium-color: #ab47bc;
+      --danger: #ef5350;
+      --success: #66bb6a;
+      --ring-size: 76px;
+      --radius: 14px;
+      --radius-sm: 10px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      max-width: 480px;
+      margin: 0 auto;
+      padding-bottom: 60px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ---- Header ---- */
+    header {
+      text-align: center;
+      padding: 24px 16px 12px;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    header h1 {
+      font-size: 26px;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    header .subtitle {
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+
+    /* ---- Tab Bar ---- */
+    nav#tab-bar {
+      display: flex;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 72px;
+      z-index: 40;
+    }
+    nav .tab {
+      flex: 1;
+      padding: 12px 0;
+      border: none;
+      background: none;
+      color: var(--text-dim);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: color .2s;
+      position: relative;
+    }
+    nav .tab.active {
+      color: var(--accent);
+    }
+    nav .tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 20%;
+      right: 20%;
+      height: 3px;
+      border-radius: 3px 3px 0 0;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+    }
+
+    /* ---- Tab Content ---- */
+    .tab-content { display: none; padding: 16px; }
+    .tab-content.active { display: block; }
+
+    /* ---- Dashboard (M4) ---- */
+    #dashboard {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      padding: 16px 0;
+    }
+    .ring {
+      display: flex;
+      justify-content: center;
+    }
+    .ring svg {
+      width: var(--ring-size);
+      height: var(--ring-size);
+    }
+    .ring-bg {
+      fill: none;
+      stroke: var(--surface);
+      stroke-width: 6;
+    }
+    .ring-fg {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 6;
+      stroke-linecap: round;
+      stroke-dasharray: 263.9;
+      stroke-dashoffset: 263.9;
+      transform: rotate(-90deg);
+      transform-origin: center;
+      transition: stroke-dashoffset .6s ease, stroke .3s;
+    }
+    #ring-calories .ring-fg { stroke: var(--cal-color); }
+    #ring-protein .ring-fg { stroke: var(--protein-color); }
+    #ring-carbs .ring-fg { stroke: var(--carbs-color); }
+    #ring-fat .ring-fg { stroke: var(--fat-color); }
+    .ring text {
+      text-anchor: middle;
+      fill: var(--text);
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .ring .ring-label {
+      font-size: 9px;
+      fill: var(--text-dim);
+      font-weight: 400;
+    }
+
+    /* Sodium bar */
+    #sodium-bar {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 0 0;
+    }
+    #sodium-bar .bar-label { font-size: 12px; color: var(--sodium-color); white-space: nowrap; }
+    #sodium-bar .bar-track {
+      flex: 1;
+      height: 6px;
+      background: var(--surface);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    #sodium-bar .bar-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--sodium-color);
+      border-radius: 3px;
+      transition: width .4s ease, background .3s;
+    }
+    #sodium-bar .bar-value { font-size: 12px; color: var(--text-dim); white-space: nowrap; }
+
+    /* ---- Category Filter ---- */
+    #category-filter {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 8px 0 16px;
+    }
+    .filter-btn {
+      padding: 6px 14px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: transparent;
+      color: var(--text-dim);
+      font-size: 13px;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .filter-btn.active {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-color: transparent;
+      color: #fff;
+    }
+
+    /* ---- Food Card Grid ---- */
+    #food-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      padding-bottom: 20px;
+    }
+    .food-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      cursor: pointer;
+      transition: transform .15s, box-shadow .2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .food-card::before {
+      content: '';
+      position: absolute;
+      top: -20px;
+      right: -20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      opacity: 0.08;
+    }
+    .food-card:active {
+      transform: scale(0.96);
+      box-shadow: 0 2px 12px rgba(245,166,35,0.15);
+    }
+    .food-card .card-cat {
+      font-size: 10px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    .food-card .card-name {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .food-card .card-nutrition {
+      display: flex;
+      gap: 12px;
+    }
+    .food-card .card-nutrition span {
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+    .food-card .card-nutrition .val {
+      color: var(--text);
+      font-weight: 500;
+    }
+    /* Category color accents */
+    .food-card[data-cat="protein"] { border-left: 3px solid var(--protein-color); }
+    .food-card[data-cat="protein"]::before { background: var(--protein-color); }
+    .food-card[data-cat="carbs"] { border-left: 3px solid var(--carbs-color); }
+    .food-card[data-cat="carbs"]::before { background: var(--carbs-color); }
+    .food-card[data-cat="vegetable"] { border-left: 3px solid #26a69a; }
+    .food-card[data-cat="vegetable"]::before { background: #26a69a; }
+    .food-card[data-cat="fruit"] { border-left: 3px solid #ff7043; }
+    .food-card[data-cat="fruit"]::before { background: #ff7043; }
+    .food-card[data-cat="seasoning"] { border-left: 3px solid var(--sodium-color); }
+    .food-card[data-cat="seasoning"]::before { background: var(--sodium-color); }
+    .food-card[data-cat="drink"] { border-left: 3px solid #42a5f5; }
+    .food-card[data-cat="drink"]::before { background: #42a5f5; }
+
+    /* ---- Plate Page ---- */
+    #plate-date {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      padding: 12px 0;
+    }
+    #plate-date button {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text);
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #plate-date span {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    #plate-list {
+      list-style: none;
+      padding: 8px 0;
+    }
+    .plate-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px;
+      background: var(--bg-card);
+      border-radius: var(--radius-sm);
+      margin-bottom: 8px;
+      border: 1px solid var(--border);
+    }
+    .plate-item .item-info { flex: 1; }
+    .plate-item .item-name { font-weight: 600; font-size: 15px; }
+    .plate-item .item-detail { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+    .plate-item .item-grams {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-right: 8px;
+    }
+    .plate-item .grams-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      transition: all .15s;
+    }
+    .plate-item .grams-btn:active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .plate-item .grams-val {
+      font-size: 13px;
+      font-weight: 600;
+      min-width: 36px;
+      text-align: center;
+    }
+    .plate-item .item-kcal { font-size: 14px; font-weight: 500; color: var(--accent); margin-right: 4px; }
+    .plate-item .item-actions button {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 16px;
+      cursor: pointer;
+      padding: 4px 6px;
+      border-radius: 8px;
+      transition: color .2s;
+    }
+    .plate-item .item-actions button:hover { color: var(--danger); }
+
+    #plate-summary {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin: 12px 0;
+      border: 1px solid var(--border);
+    }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      font-size: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .summary-row:last-child { border-bottom: none; }
+    .summary-row span:first-child { color: var(--text-dim); }
+    .summary-row span:last-child { font-weight: 600; }
+    .summary-row.over span:last-child { color: var(--danger); }
+
+    #save-day-btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin: 8px 0 24px;
+      transition: opacity .2s;
+    }
+    #save-day-btn:active { opacity: 0.85; }
+
+    #history-section { padding-top: 8px; }
+    #history-section h2 { font-size: 18px; margin-bottom: 12px; }
+    #history-list { list-style: none; }
+    .history-item {
+      padding: 12px;
+      background: var(--bg-card);
+      border-radius: var(--radius-sm);
+      margin-bottom: 8px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+    }
+    .history-item .hist-date { font-weight: 600; font-size: 15px; }
+    .history-item .hist-summary { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+
+    /* ---- Food Library Page ---- */
+    #tab-foods h2 { font-size: 18px; margin-bottom: 12px; }
+
+    #add-food-btn {
+      width: 100%;
+      padding: 12px;
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      background: transparent;
+      color: var(--accent);
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-bottom: 16px;
+      transition: border-color .2s;
+    }
+    #add-food-btn:hover { border-color: var(--accent); }
+
+    /* Form */
+    #food-form {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+    }
+    #food-form h3 { font-size: 17px; margin-bottom: 16px; }
+    .form-group {
+      margin-bottom: 12px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+    }
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg-input);
+      color: var(--text);
+      font-size: 15px;
+    }
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .form-row {
+      display: flex;
+      gap: 12px;
+    }
+    .form-row .form-group { flex: 1; }
+    .form-hint {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-bottom: 12px;
+    }
+    .form-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .form-actions button {
+      flex: 1;
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+    }
+    #food-submit-btn {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+    }
+    #food-cancel-btn {
+      background: var(--surface);
+      color: var(--text-dim);
+    }
+
+    /* Food library list */
+    #food-library-list { list-style: none; }
+    .food-lib-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px;
+      background: var(--bg-card);
+      border-radius: var(--radius-sm);
+      margin-bottom: 8px;
+      border: 1px solid var(--border);
+    }
+    .food-lib-item .fli-info { flex: 1; }
+    .food-lib-item .fli-name { font-weight: 600; font-size: 15px; }
+    .food-lib-item .fli-detail { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+    .food-lib-item .fli-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .food-lib-item .fli-actions button {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-dim);
+      padding: 6px 10px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    /* Backup buttons */
+    #food-backup {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    #food-backup button {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg-card);
+      color: var(--text);
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    /* ---- Settings Page ---- */
+    #tab-settings h2 { font-size: 18px; margin-bottom: 12px; }
+    #goal-presets {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .preset-btn {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg-card);
+      color: var(--text);
+      font-size: 14px;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .preset-btn.active {
+      border-color: var(--accent);
+      background: rgba(245, 166, 35, 0.1);
+      color: var(--accent);
+    }
+    #goal-form {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 20px;
+      border: 1px solid var(--border);
+    }
+    #goal-form button[type="submit"] {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    /* ---- Portion Modal ---- */
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .modal.hidden { display: none; }
+    .modal-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+    }
+    .modal-sheet {
+      position: relative;
+      width: 100%;
+      max-width: 480px;
+      background: var(--bg-card);
+      border-radius: 20px 20px 0 0;
+      padding: 24px 20px 32px;
+      animation: slideUp .25s ease;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    .modal-sheet h3 {
+      font-size: 18px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .portion-options {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .portion-btn {
+      padding: 12px 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 15px;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .portion-btn:active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .custom-portion {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .custom-portion input {
+      flex: 1;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg-input);
+      color: var(--text);
+      font-size: 15px;
+    }
+    .custom-portion input:focus { outline: none; border-color: var(--accent); }
+    #custom-portion-btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: var(--accent);
+      color: #fff;
+      font-size: 15px;
+      cursor: pointer;
+    }
+    .modal-cancel {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--text-dim);
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    /* ---- Toast ---- */
+    #toast {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--success);
+      color: #fff;
+      padding: 10px 24px;
+      border-radius: 24px;
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 200;
+      animation: fadeInUp .3s ease;
+    }
+    #toast.hidden { display: none; }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translate(-50%, 10px); }
+      to { opacity: 1; transform: translate(-50%, 0); }
+    }
+
+    /* ---- Utilities ---- */
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- Portal shared nav -->
+  <script src="shared-nav.js"></script>
+
+  <div id="nutripick-app" style="max-width:480px;margin:0 auto;padding-top:8px;">
+  <header id="app-header" style="display:none;">
+    <h1>NutriPick</h1>
+    <p class="subtitle">每日选餐营养助手</p>
+  </header>
+
+  <!-- Tab Navigation -->
+  <nav id="tab-bar">
+    <button class="tab active" data-tab="select">选餐</button>
+    <button class="tab" data-tab="plate">餐盘</button>
+    <button class="tab" data-tab="foods">食物库</button>
+    <button class="tab" data-tab="settings">设置</button>
+  </nav>
+
+  <!-- Main Content -->
+  <main id="app-main">
+
+    <!-- Tab: Select (选餐) -->
+    <section id="tab-select" class="tab-content active">
+
+      <!-- Nutrition Dashboard (M4) -->
+      <div id="dashboard">
+        <div class="ring" id="ring-calories">
+          <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" class="ring-bg"/><circle cx="50" cy="50" r="42" class="ring-fg"/><text x="50" y="46" class="ring-value">0</text><text x="50" y="60" class="ring-label">热量</text></svg>
+        </div>
+        <div class="ring" id="ring-protein">
+          <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" class="ring-bg"/><circle cx="50" cy="50" r="42" class="ring-fg"/><text x="50" y="46" class="ring-value">0</text><text x="50" y="60" class="ring-label">蛋白质</text></svg>
+        </div>
+        <div class="ring" id="ring-carbs">
+          <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" class="ring-bg"/><circle cx="50" cy="50" r="42" class="ring-fg"/><text x="50" y="46" class="ring-value">0</text><text x="50" y="60" class="ring-label">碳水</text></svg>
+        </div>
+        <div class="ring" id="ring-fat">
+          <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" class="ring-bg"/><circle cx="50" cy="50" r="42" class="ring-fg"/><text x="50" y="46" class="ring-value">0</text><text x="50" y="60" class="ring-label">脂肪</text></svg>
+        </div>
+        <div id="sodium-bar">
+          <span class="bar-label">钠</span>
+          <div class="bar-track"><div class="bar-fill"></div></div>
+          <span class="bar-value">0mg</span>
+        </div>
+      </div>
+
+      <!-- Category Filter -->
+      <div id="category-filter">
+        <button class="filter-btn active" data-cat="all">全部</button>
+        <button class="filter-btn" data-cat="protein">蛋白质源</button>
+        <button class="filter-btn" data-cat="carbs">碳水源</button>
+        <button class="filter-btn" data-cat="vegetable">蔬菜</button>
+        <button class="filter-btn" data-cat="fruit">水果</button>
+        <button class="filter-btn" data-cat="seasoning">调味料</button>
+        <button class="filter-btn" data-cat="drink">饮品</button>
+      </div>
+
+      <!-- Food Card Grid -->
+      <div id="food-grid">
+        <!-- Cards rendered by JS -->
+      </div>
+
+    </section>
+
+    <!-- Tab: Plate (餐盘) -->
+    <section id="tab-plate" class="tab-content">
+
+      <div id="plate-date">
+        <button id="prev-day">&lt;</button>
+        <span id="current-date">今天</span>
+        <button id="next-day">&gt;</button>
+      </div>
+
+      <ul id="plate-list">
+        <!-- Plate items rendered by JS -->
+      </ul>
+
+      <div id="plate-summary">
+        <div class="summary-row"><span>总热量</span><span id="sum-cal">0 kcal</span></div>
+        <div class="summary-row"><span>蛋白质</span><span id="sum-protein">0g</span></div>
+        <div class="summary-row"><span>碳水</span><span id="sum-carbs">0g</span></div>
+        <div class="summary-row"><span>脂肪</span><span id="sum-fat">0g</span></div>
+        <div class="summary-row"><span>钠</span><span id="sum-sodium">0mg</span></div>
+      </div>
+
+      <button id="save-day-btn">保存今日记录</button>
+
+      <!-- History -->
+      <div id="history-section">
+        <h2>历史记录</h2>
+        <ul id="history-list">
+          <!-- History items rendered by JS -->
+        </ul>
+      </div>
+
+    </section>
+
+    <!-- Tab: Foods (食物库) -->
+    <section id="tab-foods" class="tab-content">
+
+      <h2>我的食物库</h2>
+
+      <button id="add-food-btn">+ 添加食物</button>
+
+      <!-- Add/Edit Food Form -->
+      <form id="food-form" class="hidden">
+        <h3 id="food-form-title">添加食物</h3>
+        <input type="hidden" id="food-edit-id">
+        <div class="form-group">
+          <label>名称</label>
+          <input type="text" id="food-name" placeholder="如：鸡胸肉" required>
+        </div>
+        <div class="form-group">
+          <label>分类</label>
+          <select id="food-category">
+            <option value="protein">蛋白质源</option>
+            <option value="carbs">碳水源</option>
+            <option value="vegetable">蔬菜</option>
+            <option value="fruit">水果</option>
+            <option value="seasoning">调味料</option>
+            <option value="drink">饮品</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>单位</label>
+          <input type="text" id="food-unit" value="g" placeholder="g / ml">
+        </div>
+        <p class="form-hint">以下营养数据按每 100g（或100ml）填写</p>
+        <div class="form-row">
+          <div class="form-group"><label>热量(kcal)</label><input type="number" id="food-calories" step="1" min="0"></div>
+          <div class="form-group"><label>蛋白质(g)</label><input type="number" id="food-protein" step="0.1" min="0"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>碳水(g)</label><input type="number" id="food-carbs" step="0.1" min="0"></div>
+          <div class="form-group"><label>脂肪(g)</label><input type="number" id="food-fat" step="0.1" min="0"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>钠(mg)</label><input type="number" id="food-sodium" step="1" min="0"></div>
+          <div class="form-group"><label>膳食纤维(g)</label><input type="number" id="food-fiber" step="0.1" min="0"></div>
+        </div>
+        <div class="form-actions">
+          <button type="submit" id="food-submit-btn">保存</button>
+          <button type="button" id="food-cancel-btn">取消</button>
+        </div>
+      </form>
+
+      <ul id="food-library-list">
+        <!-- Food library items rendered by JS -->
+      </ul>
+
+      <div id="food-backup">
+        <button id="export-btn">导出 JSON</button>
+        <button id="import-btn">导入 JSON</button>
+        <input type="file" id="import-file" accept=".json" class="hidden">
+      </div>
+
+    </section>
+
+    <!-- Tab: Settings (设置) -->
+    <section id="tab-settings" class="tab-content">
+
+      <h2>每日营养目标</h2>
+
+      <div id="goal-presets">
+        <button class="preset-btn" data-preset="fat-loss">减脂</button>
+        <button class="preset-btn" data-preset="muscle-gain">增肌</button>
+        <button class="preset-btn" data-preset="maintenance">维持</button>
+      </div>
+
+      <form id="goal-form">
+        <div class="form-group">
+          <label>热量目标 (kcal)</label>
+          <input type="number" id="goal-calories" step="50" min="500">
+        </div>
+        <div class="form-group">
+          <label>蛋白质 (g)</label>
+          <input type="number" id="goal-protein" step="5" min="0">
+        </div>
+        <div class="form-group">
+          <label>碳水 (g)</label>
+          <input type="number" id="goal-carbs" step="5" min="0">
+        </div>
+        <div class="form-group">
+          <label>脂肪 (g)</label>
+          <input type="number" id="goal-fat" step="5" min="0">
+        </div>
+        <div class="form-group">
+          <label>钠 (mg)</label>
+          <input type="number" id="goal-sodium" step="100" min="0">
+        </div>
+        <button type="submit">保存目标</button>
+      </form>
+
+    </section>
+
+  </main>
+
+  <!-- Portion Picker Modal -->
+  <div id="portion-modal" class="modal hidden">
+    <div class="modal-overlay"></div>
+    <div class="modal-sheet">
+      <h3 id="portion-food-name">食物名称</h3>
+      <div class="portion-options">
+        <button class="portion-btn" data-grams="50">50g</button>
+        <button class="portion-btn" data-grams="100">100g</button>
+        <button class="portion-btn" data-grams="150">150g</button>
+        <button class="portion-btn" data-grams="200">200g</button>
+      </div>
+      <div class="custom-portion">
+        <input type="number" id="custom-grams" placeholder="自定义克数" min="1" step="1">
+        <button id="custom-portion-btn">确定</button>
+      </div>
+      <button class="modal-cancel">取消</button>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="hidden"></div>
+
+  <script>
+    // ---- Storage Keys ----
+    const KEYS = {
+      foods: 'nutripick_foods',
+      goals: 'nutripick_goals',
+      meals: 'nutripick_meals',
+      history: 'nutripick_history',
+    };
+
+    // ---- Category Labels ----
+    const CAT_LABELS = {
+      protein: '蛋白质源', carbs: '碳水源', vegetable: '蔬菜',
+      fruit: '水果', seasoning: '调味料', drink: '饮品',
+    };
+
+    // ---- Seed Foods (per 100g) ----
+    const SEED_FOODS = [
+      { id:'s1',  name:'鸡胸肉', category:'protein', unit:'g', calories:133, protein:31, carbs:0, fat:1.2, sodium:74, fiber:0 },
+      { id:'s2',  name:'鸡蛋',   category:'protein', unit:'g', calories:144, protein:13, carbs:1.1, fat:10, sodium:142, fiber:0 },
+      { id:'s3',  name:'瘦牛肉', category:'protein', unit:'g', calories:106, protein:20, carbs:0, fat:2.3, sodium:54, fiber:0 },
+      { id:'s4',  name:'三文鱼', category:'protein', unit:'g', calories:208, protein:20, carbs:0, fat:13, sodium:59, fiber:0 },
+      { id:'s5',  name:'虾仁',   category:'protein', unit:'g', calories:99,  protein:24, carbs:0.2, fat:0.3, sodium:111, fiber:0 },
+      { id:'s6',  name:'豆腐',   category:'protein', unit:'g', calories:73,  protein:8,  carbs:1.5, fat:3.5, sodium:7, fiber:0.4 },
+      { id:'s7',  name:'西兰花', category:'vegetable', unit:'g', calories:34, protein:2.8, carbs:7, fat:0.4, sodium:33, fiber:2.6 },
+      { id:'s8',  name:'菠菜',   category:'vegetable', unit:'g', calories:23, protein:2.9, carbs:3.6, fat:0.4, sodium:79, fiber:2.2 },
+      { id:'s9',  name:'番茄',   category:'vegetable', unit:'g', calories:18, protein:0.9, carbs:3.9, fat:0.2, sodium:5, fiber:1.2 },
+      { id:'s10', name:'黄瓜',   category:'vegetable', unit:'g', calories:15, protein:0.7, carbs:3.6, fat:0.1, sodium:2, fiber:0.5 },
+      { id:'s11', name:'糙米',   category:'carbs',    unit:'g', calories:362, protein:7.5, carbs:76, fat:2.7, sodium:5, fiber:3.2 },
+      { id:'s12', name:'红薯',   category:'carbs',    unit:'g', calories:86,  protein:1.6, carbs:20, fat:0.1, sodium:55, fiber:3 },
+      { id:'s13', name:'燕麦',   category:'carbs',    unit:'g', calories:389, protein:17, carbs:66, fat:6.9, sodium:2, fiber:10.6 },
+      { id:'s14', name:'全麦面包', category:'carbs',  unit:'g', calories:247, protein:13, carbs:41, fat:3.4, sodium:450, fiber:7 },
+      { id:'s15', name:'香蕉',   category:'fruit',    unit:'g', calories:89,  protein:1.1, carbs:23, fat:0.3, sodium:1, fiber:2.6 },
+      { id:'s16', name:'苹果',   category:'fruit',    unit:'g', calories:52,  protein:0.3, carbs:14, fat:0.2, sodium:1, fiber:2.4 },
+      { id:'s17', name:'牛油果', category:'fruit',    unit:'g', calories:160, protein:2,  carbs:9,  fat:15, sodium:7, fiber:7 },
+      { id:'s18', name:'牛奶',   category:'drink',    unit:'ml', calories:42, protein:3.4, carbs:5, fat:1, sodium:44, fiber:0 },
+    ];
+
+    // ---- Default Goals ----
+    const DEFAULT_GOALS = {
+      fatLoss:     { calories:1500, protein:120, carbs:150, fat:50,  sodium:2000 },
+      muscleGain:  { calories:2500, protein:180, carbs:300, fat:80,  sodium:2500 },
+      maintenance: { calories:2000, protein:150, carbs:200, fat:65,  sodium:2300 },
+    };
+
+    // ---- State ----
+    let foods = [];
+    let goals = { ...DEFAULT_GOALS.fatLoss };
+    let meals = {};       // { '2026-05-14': [{foodId, grams, addedAt}] }
+    let history = {};     // { '2026-05-13': {items:[...], totals:{...}} }
+    let viewingDate = todayStr();
+    let activeFilter = 'all';
+    let selectedFoodId = null;
+    let editingFoodId = null;
+
+    function todayStr() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    // ---- Load / Save ----
+    function loadData() {
+      try { foods = JSON.parse(localStorage.getItem(KEYS.foods)) || []; } catch(e) { foods = []; }
+      if (foods.length === 0) { foods = JSON.parse(JSON.stringify(SEED_FOODS)); saveFoods(); }
+      try { goals = JSON.parse(localStorage.getItem(KEYS.goals)) || { ...DEFAULT_GOALS.fatLoss }; } catch(e) {}
+      try { meals = JSON.parse(localStorage.getItem(KEYS.meals)) || {}; } catch(e) { meals = {}; }
+      try { history = JSON.parse(localStorage.getItem(KEYS.history)) || {}; } catch(e) { history = {}; }
+    }
+    function saveFoods()    { localStorage.setItem(KEYS.foods, JSON.stringify(foods)); }
+    function saveGoals()    { localStorage.setItem(KEYS.goals, JSON.stringify(goals)); }
+    function saveMeals()    { localStorage.setItem(KEYS.meals, JSON.stringify(meals)); }
+    function saveHistory()  { localStorage.setItem(KEYS.history, JSON.stringify(history)); }
+
+    // ---- Helpers ----
+    function getFoodById(id) { return foods.find(f => f.id === id); }
+    function genId() { return 'f' + Date.now() + Math.random().toString(36).slice(2,6); }
+
+    function calcNutrition(food, grams) {
+      const r = grams / 100;
+      return {
+        calories: Math.round(food.calories * r),
+        protein:  +(food.protein * r).toFixed(1),
+        carbs:    +(food.carbs * r).toFixed(1),
+        fat:      +(food.fat * r).toFixed(1),
+        sodium:   Math.round(food.sodium * r),
+      };
+    }
+
+    function getMealTotals(date) {
+      const items = meals[date] || [];
+      let totals = { calories:0, protein:0, carbs:0, fat:0, sodium:0 };
+      items.forEach(item => {
+        const food = getFoodById(item.foodId);
+        if (!food) return;
+        const n = calcNutrition(food, item.grams);
+        totals.calories += n.calories;
+        totals.protein  += n.protein;
+        totals.carbs    += n.carbs;
+        totals.fat      += n.fat;
+        totals.sodium   += n.sodium;
+      });
+      // Round
+      totals.protein = +totals.protein.toFixed(1);
+      totals.carbs   = +totals.carbs.toFixed(1);
+      totals.fat     = +totals.fat.toFixed(1);
+      return totals;
+    }
+
+    // ---- Toast ----
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.remove('hidden');
+      setTimeout(() => t.classList.add('hidden'), 2000);
+    }
+
+    // ---- Tab Switching ----
+    function initTabs() {
+      document.querySelectorAll('nav .tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('nav .tab').forEach(b => b.classList.remove('active'));
+          document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
+          btn.classList.add('active');
+          document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+        });
+      });
+    }
+
+    // ---- Render Food Cards ----
+    function renderFoodCards() {
+      const grid = document.getElementById('food-grid');
+      const filtered = activeFilter === 'all' ? foods : foods.filter(f => f.category === activeFilter);
+      if (filtered.length === 0) {
+        grid.innerHTML = '<p style="color:var(--text-dim);text-align:center;padding:40px 0;">暂无食物，去食物库添加</p>';
+        return;
+      }
+      grid.innerHTML = filtered.map(f => `
+        <div class="food-card" data-cat="${f.category}" data-id="${f.id}" onclick="openPortionModal('${f.id}')">
+          <div class="card-cat">${CAT_LABELS[f.category] || f.category}</div>
+          <div class="card-name">${f.name}</div>
+          <div class="card-nutrition">
+            <span><span class="val">${f.calories}</span> kcal</span>
+            <span><span class="val">${f.protein}</span>g 蛋白</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // ---- Category Filter ----
+    function initCategoryFilter() {
+      document.querySelectorAll('#category-filter .filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('#category-filter .filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          activeFilter = btn.dataset.cat;
+          renderFoodCards();
+        });
+      });
+    }
+
+    // ---- Dashboard ----
+    function updateDashboard() {
+      const totals = getMealTotals(viewingDate);
+      setRing('ring-calories', totals.calories, goals.calories);
+      setRing('ring-protein',  totals.protein,  goals.protein);
+      setRing('ring-carbs',    totals.carbs,    goals.carbs);
+      setRing('ring-fat',      totals.fat,      goals.fat);
+      // Sodium bar
+      const sodiumPct = goals.sodium > 0 ? Math.min(totals.sodium / goals.sodium * 100, 100) : 0;
+      const sodiumFill = document.querySelector('#sodium-bar .bar-fill');
+      sodiumFill.style.width = sodiumPct + '%';
+      if (totals.sodium > goals.sodium) {
+        sodiumFill.style.background = 'var(--danger)';
+      } else {
+        sodiumFill.style.background = 'var(--sodium-color)';
+      }
+      document.querySelector('#sodium-bar .bar-value').textContent = totals.sodium + 'mg';
+    }
+
+    function setRing(ringId, current, target) {
+      const pct = target > 0 ? Math.min(current / target, 1) : 0;
+      const over = current > target && target > 0;
+      const circumference = 2 * Math.PI * 42;
+      const offset = circumference * (1 - pct);
+      const fg = document.querySelector('#' + ringId + ' .ring-fg');
+      fg.style.strokeDashoffset = offset;
+      // Reset stroke color
+      const colorMap = { 'ring-calories':'var(--cal-color)','ring-protein':'var(--protein-color)','ring-carbs':'var(--carbs-color)','ring-fat':'var(--fat-color)' };
+      fg.style.stroke = over ? 'var(--danger)' : (colorMap[ringId] || 'var(--accent)');
+      // Update text
+      const valText = document.querySelector('#' + ringId + ' .ring-value');
+      valText.textContent = Math.round(current);
+      const labelText = document.querySelector('#' + ringId + ' .ring-label');
+      const pctStr = target > 0 ? Math.round(current / target * 100) + '%' : '';
+      const labelMap = { 'ring-calories':'热量','ring-protein':'蛋白质','ring-carbs':'碳水','ring-fat':'脂肪' };
+      labelText.textContent = (labelMap[ringId] || '') + (pctStr ? ' ' + pctStr : '');
+    }
+
+    // ---- Portion Modal ----
+    function openPortionModal(foodId) {
+      selectedFoodId = foodId;
+      const food = getFoodById(foodId);
+      document.getElementById('portion-food-name').textContent = food ? food.name : '';
+      document.getElementById('custom-grams').value = '';
+      document.getElementById('portion-modal').classList.remove('hidden');
+    }
+    function closePortionModal() {
+      document.getElementById('portion-modal').classList.add('hidden');
+      selectedFoodId = null;
+    }
+    function addToPlate(grams) {
+      if (!selectedFoodId || grams <= 0) return;
+      if (!meals[viewingDate]) meals[viewingDate] = [];
+      meals[viewingDate].push({ foodId: selectedFoodId, grams: grams, addedAt: Date.now() });
+      saveMeals();
+      closePortionModal();
+      const food = getFoodById(selectedFoodId);
+      showToast(`已添加 ${food ? food.name : ''} ${grams}g`);
+      updateDashboard();
+      renderPlate();
+    }
+
+    function initPortionModal() {
+      document.querySelectorAll('.portion-btn').forEach(btn => {
+        btn.addEventListener('click', () => addToPlate(parseInt(btn.dataset.grams)));
+      });
+      document.getElementById('custom-portion-btn').addEventListener('click', () => {
+        const v = parseInt(document.getElementById('custom-grams').value);
+        if (v > 0) addToPlate(v);
+      });
+      document.querySelector('.modal-cancel').addEventListener('click', closePortionModal);
+      document.querySelector('.modal-overlay').addEventListener('click', closePortionModal);
+    }
+
+    // ---- Plate ----
+    function renderPlate() {
+      const list = document.getElementById('plate-list');
+      const items = meals[viewingDate] || [];
+      if (items.length === 0) {
+        list.innerHTML = '<div style="text-align:center;padding:48px 0;"><div style="font-size:40px;margin-bottom:8px;">🍽️</div><p style="color:var(--text-dim);font-size:14px;">今日餐盘空空如也<br>去选餐页添加食物吧</p></div>';
+      } else {
+        list.innerHTML = items.map((item, idx) => {
+          const food = getFoodById(item.foodId);
+          if (!food) return '';
+          const n = calcNutrition(food, item.grams);
+          return `<li class="plate-item">
+            <div class="item-info">
+              <div class="item-name">${food.name}</div>
+              <div class="item-detail">${n.protein}g蛋白 · ${n.fat}g脂肪</div>
+            </div>
+            <div class="item-grams">
+              <button class="grams-btn" onclick="adjustGrams(${idx},-25)">−</button>
+              <span class="grams-val">${item.grams}g</span>
+              <button class="grams-btn" onclick="adjustGrams(${idx},25)">+</button>
+            </div>
+            <span class="item-kcal">${n.calories}</span>
+            <div class="item-actions"><button onclick="removePlateItem(${idx})">✕</button></div>
+          </li>`;
+        }).join('');
+      }
+      // Summary
+      const totals = getMealTotals(viewingDate);
+      const rows = [
+        { id:'sum-cal',     val: totals.calories, goal: goals.calories, text: totals.calories + ' kcal' },
+        { id:'sum-protein', val: totals.protein,  goal: goals.protein,  text: totals.protein + 'g' },
+        { id:'sum-carbs',   val: totals.carbs,    goal: goals.carbs,    text: totals.carbs + 'g' },
+        { id:'sum-fat',     val: totals.fat,      goal: goals.fat,      text: totals.fat + 'g' },
+        { id:'sum-sodium',  val: totals.sodium,   goal: goals.sodium,   text: totals.sodium + 'mg' },
+      ];
+      rows.forEach(r => {
+        const el = document.getElementById(r.id);
+        el.textContent = r.text;
+        const row = el.closest('.summary-row');
+        if (row) row.classList.toggle('over', r.val > r.goal && r.goal > 0);
+      });
+    }
+
+    function adjustGrams(idx, delta) {
+      const items = meals[viewingDate] || [];
+      if (!items[idx]) return;
+      items[idx].grams = Math.max(10, items[idx].grams + delta);
+      saveMeals();
+      renderPlate();
+      updateDashboard();
+    }
+
+    function removePlateItem(idx) {
+      const items = meals[viewingDate] || [];
+      items.splice(idx, 1);
+      saveMeals();
+      renderPlate();
+      updateDashboard();
+      showToast('已移除');
+    }
+
+    // ---- Date Navigation ----
+    function updateDateDisplay() {
+      const today = todayStr();
+      const el = document.getElementById('current-date');
+      if (viewingDate === today) { el.textContent = '今天'; }
+      else {
+        const diff = Math.round((new Date(today) - new Date(viewingDate)) / 86400000);
+        if (diff === 1) el.textContent = '昨天';
+        else if (diff === 2) el.textContent = '前天';
+        else el.textContent = viewingDate;
+      }
+    }
+
+    function shiftDate(offset) {
+      const d = new Date(viewingDate);
+      d.setDate(d.getDate() + offset);
+      viewingDate = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      updateDateDisplay();
+      renderPlate();
+      updateDashboard();
+    }
+
+    // ---- Food Library ----
+    function renderFoodLibrary() {
+      const list = document.getElementById('food-library-list');
+      if (foods.length === 0) {
+        list.innerHTML = '<p style="color:var(--text-dim);text-align:center;padding:20px 0;">食物库为空</p>';
+        return;
+      }
+      list.innerHTML = foods.map(f => `
+        <li class="food-lib-item">
+          <div class="fli-info">
+            <div class="fli-name">${f.name}</div>
+            <div class="fli-detail">${CAT_LABELS[f.category]||f.category} · ${f.calories}kcal · ${f.protein}g蛋白 / 100${f.unit}</div>
+          </div>
+          <div class="fli-actions">
+            <button onclick="editFood('${f.id}')">编辑</button>
+            <button onclick="deleteFood('${f.id}')">删除</button>
+          </div>
+        </li>
+      `).join('');
+    }
+
+    function showFoodForm(food) {
+      editingFoodId = food ? food.id : null;
+      document.getElementById('food-form-title').textContent = food ? '编辑食物' : '添加食物';
+      document.getElementById('food-edit-id').value = editingFoodId || '';
+      document.getElementById('food-name').value = food ? food.name : '';
+      document.getElementById('food-category').value = food ? food.category : 'protein';
+      document.getElementById('food-unit').value = food ? food.unit : 'g';
+      document.getElementById('food-calories').value = food ? food.calories : '';
+      document.getElementById('food-protein').value = food ? food.protein : '';
+      document.getElementById('food-carbs').value = food ? food.carbs : '';
+      document.getElementById('food-fat').value = food ? food.fat : '';
+      document.getElementById('food-sodium').value = food ? food.sodium : '';
+      document.getElementById('food-fiber').value = food ? food.fiber : '';
+      document.getElementById('food-form').classList.remove('hidden');
+      document.getElementById('add-food-btn').classList.add('hidden');
+    }
+
+    function hideFoodForm() {
+      document.getElementById('food-form').classList.add('hidden');
+      document.getElementById('add-food-btn').classList.remove('hidden');
+      editingFoodId = null;
+    }
+
+    function editFood(id) {
+      const food = getFoodById(id);
+      if (food) showFoodForm(food);
+    }
+
+    function deleteFood(id) {
+      if (!confirm('确定删除这个食物吗？')) return;
+      foods = foods.filter(f => f.id !== id);
+      saveFoods();
+      renderFoodLibrary();
+      renderFoodCards();
+      showToast('已删除');
+    }
+
+    function initFoodLibrary() {
+      document.getElementById('add-food-btn').addEventListener('click', () => showFoodForm(null));
+      document.getElementById('food-cancel-btn').addEventListener('click', hideFoodForm);
+
+      document.getElementById('food-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = document.getElementById('food-name').value.trim();
+        if (!name) return;
+        const data = {
+          name,
+          category: document.getElementById('food-category').value,
+          unit: document.getElementById('food-unit').value || 'g',
+          calories: parseFloat(document.getElementById('food-calories').value) || 0,
+          protein:  parseFloat(document.getElementById('food-protein').value) || 0,
+          carbs:    parseFloat(document.getElementById('food-carbs').value) || 0,
+          fat:      parseFloat(document.getElementById('food-fat').value) || 0,
+          sodium:   parseFloat(document.getElementById('food-sodium').value) || 0,
+          fiber:    parseFloat(document.getElementById('food-fiber').value) || 0,
+        };
+
+        if (editingFoodId) {
+          const idx = foods.findIndex(f => f.id === editingFoodId);
+          if (idx >= 0) { foods[idx] = { ...foods[idx], ...data }; }
+        } else {
+          data.id = genId();
+          foods.push(data);
+        }
+        saveFoods();
+        hideFoodForm();
+        renderFoodLibrary();
+        renderFoodCards();
+        showToast(editingFoodId ? '已更新' : '已添加');
+      });
+
+      // Export
+      document.getElementById('export-btn').addEventListener('click', () => {
+        const data = { foods, goals, meals, history };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'nutripick-backup-' + todayStr() + '.json';
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('已导出');
+      });
+
+      // Import
+      document.getElementById('import-btn').addEventListener('click', () => {
+        document.getElementById('import-file').click();
+      });
+      document.getElementById('import-file').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          try {
+            const data = JSON.parse(ev.target.result);
+            if (data.foods) { foods = data.foods; saveFoods(); }
+            if (data.goals) { goals = data.goals; saveGoals(); }
+            if (data.meals) { meals = data.meals; saveMeals(); }
+            if (data.history) { history = data.history; saveHistory(); }
+            renderFoodLibrary();
+            renderFoodCards();
+            renderPlate();
+            updateDashboard();
+            renderHistory();
+            loadGoalForm();
+            showToast('导入成功');
+          } catch(err) {
+            showToast('导入失败：文件格式错误');
+          }
+        };
+        reader.readAsText(file);
+        e.target.value = '';
+      });
+
+      renderFoodLibrary();
+    }
+
+    // ---- Goal Settings ----
+    function loadGoalForm() {
+      document.getElementById('goal-calories').value = goals.calories;
+      document.getElementById('goal-protein').value = goals.protein;
+      document.getElementById('goal-carbs').value = goals.carbs;
+      document.getElementById('goal-fat').value = goals.fat;
+      document.getElementById('goal-sodium').value = goals.sodium;
+      // Highlight active preset
+      document.querySelectorAll('.preset-btn').forEach(btn => {
+        const p = btn.dataset.preset;
+        const preset = DEFAULT_GOALS[p === 'fat-loss' ? 'fatLoss' : p === 'muscle-gain' ? 'muscleGain' : 'maintenance'];
+        const match = preset && goals.calories === preset.calories && goals.protein === preset.protein;
+        btn.classList.toggle('active', !!match);
+      });
+    }
+
+    function initGoalSettings() {
+      document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const key = btn.dataset.preset;
+          const map = { 'fat-loss': 'fatLoss', 'muscle-gain': 'muscleGain', 'maintenance': 'maintenance' };
+          const preset = DEFAULT_GOALS[map[key]];
+          if (preset) {
+            goals = { ...preset };
+            saveGoals();
+            loadGoalForm();
+            updateDashboard();
+            showToast('已应用目标模板');
+          }
+        });
+      });
+
+      document.getElementById('goal-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        goals.calories = parseInt(document.getElementById('goal-calories').value) || 1500;
+        goals.protein  = parseInt(document.getElementById('goal-protein').value) || 120;
+        goals.carbs    = parseInt(document.getElementById('goal-carbs').value) || 150;
+        goals.fat      = parseInt(document.getElementById('goal-fat').value) || 50;
+        goals.sodium   = parseInt(document.getElementById('goal-sodium').value) || 2000;
+        saveGoals();
+        updateDashboard();
+        loadGoalForm();
+        showToast('目标已保存');
+      });
+
+      loadGoalForm();
+    }
+
+    // ---- History ----
+    function renderHistory() {
+      const list = document.getElementById('history-list');
+      const dates = Object.keys(history).sort().reverse();
+      if (dates.length === 0) {
+        list.innerHTML = '<p style="color:var(--text-dim);text-align:center;padding:20px 0;">暂无历史记录</p>';
+        return;
+      }
+      list.innerHTML = dates.map(date => {
+        const rec = history[date];
+        const items = rec.items || [];
+        const totals = rec.totals || {};
+        return `<li class="history-item" onclick="viewHistory('${date}')">
+          <div class="hist-date">${date}</div>
+          <div class="hist-summary">${items.length}样食物 · ${totals.calories || 0}kcal · ${(totals.protein || 0)}g蛋白</div>
+        </li>`;
+      }).join('');
+    }
+
+    function viewHistory(date) {
+      viewingDate = date;
+      updateDateDisplay();
+      renderPlate();
+      updateDashboard();
+      // Switch to plate tab
+      document.querySelectorAll('nav .tab').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
+      document.querySelector('nav .tab[data-tab="plate"]').classList.add('active');
+      document.getElementById('tab-plate').classList.add('active');
+    }
+
+    function saveDayToHistory() {
+      const items = meals[viewingDate] || [];
+      if (items.length === 0) {
+        showToast('今日餐盘为空，无法保存');
+        return;
+      }
+      const totals = getMealTotals(viewingDate);
+      history[viewingDate] = { items: JSON.parse(JSON.stringify(items)), totals };
+      saveHistory();
+      renderHistory();
+      showToast('已保存到历史记录');
+    }
+
+    function initHistory() {
+      document.getElementById('save-day-btn').addEventListener('click', saveDayToHistory);
+      renderHistory();
+    }
+
+    // ---- Init ----
+    function init() {
+      loadData();
+      initTabs();
+      initCategoryFilter();
+      initPortionModal();
+      initFoodLibrary();
+      initGoalSettings();
+      initHistory();
+      renderFoodCards();
+      renderPlate();
+      updateDashboard();
+      updateDateDisplay();
+
+      document.getElementById('prev-day').addEventListener('click', () => shiftDate(-1));
+      document.getElementById('next-day').addEventListener('click', () => shiftDate(1));
+    }
+
+    init();
+  </script>
+
+  </div><!-- end nutripick-app -->
+</body>
+</html>

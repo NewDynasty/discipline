@@ -78,6 +78,13 @@ systems:
     icon: "📜"
     nav: true
 
+  - id: nutripick
+    name: NutriPick
+    path: /nutripick
+    html: nutripick.html
+    icon: "🍽️"
+    nav: true
+
   # ── 新系统示例（取消注释即生效）──────────────────
   # - id: monitor
   #   name: 监控
